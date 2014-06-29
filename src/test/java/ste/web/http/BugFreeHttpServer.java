@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Stefano Fornari.
+ * Copyright (C) 2014 Stefano Fornari.
  * All Rights Reserved.  No use, copying or distribution of this
  * work may be made except in accordance with a valid license
  * agreement from Stefano Fornari.  This notice must be
@@ -98,7 +98,51 @@ public class BugFreeHttpServer {
     }
 
     @Test
-    public void constructor() throws Exception {
+    public void homeCanNotBeNullInConstructor() throws Exception {
+        try {
+            new HttpServer(null, HttpServer.ClientAuthentication.NONE, 8000, null);
+            fail("missing not illegal parameter check");
+        } catch (IllegalArgumentException x) {
+            then(x.getMessage()).contains("home can not be null");
+        }
+    }
+    
+    @Test
+    public void homeMustExistConstructor() throws Exception {
+        final String NOTEXISTING = "/notexisting";
+        final String EXISTING = "src/test/docroot/index.html";
+        try {
+            new HttpServer(NOTEXISTING, HttpServer.ClientAuthentication.NONE, 8000, null);
+            fail("missing not illegal parameter check");
+        } catch (IllegalArgumentException x) {
+            then(x.getMessage()).contains("must exist").contains(NOTEXISTING);
+        }
+        
+        try {
+            new HttpServer(EXISTING, HttpServer.ClientAuthentication.NONE, 8000, null);
+            fail("missing not illegal parameter check");
+        } catch (IllegalArgumentException x) {
+            then(x.getMessage()).contains("must be a directory").contains(EXISTING);
+        }
+    }
+    
+    
+    @Test
+    public void portCanNotBeNegativeOrZeroInConstructor() throws Exception {
+        try {
+            new HttpServer(".", HttpServer.ClientAuthentication.NONE, 0, null);
+            fail("missing illegal parameter check");
+        } catch (IllegalArgumentException x) {
+            then(x.getMessage()).contains("port can not be <= 0");
+        }
+        
+        try {
+            new HttpServer(".", HttpServer.ClientAuthentication.NONE, -2, null);
+            fail("missing illegal parameter check");
+        } catch (IllegalArgumentException x) {
+            then(x.getMessage()).contains("port can not be <= 0");
+        }
+        
     }
 
     /**

@@ -1,32 +1,22 @@
 /*
- * ====================================================================
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Copyright (C) 2014 Stefano Fornari.
+ * All Rights Reserved.  No use, copying or distribution of this
+ * work may be made except in accordance with a valid license
+ * agreement from Stefano Fornari.  This notice must be
+ * included on all copies, modifications and derivatives of this
+ * work.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
- *
+ * STEFANO FORNARI MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY
+ * OF THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT. STEFANO FORNARI SHALL NOT BE LIABLE FOR ANY
+ * DAMAGES SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
+ * THIS SOFTWARE OR ITS DERIVATIVES.
  */
 
 package ste.web.http;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -81,12 +71,36 @@ public class HttpServer {
     private RequestListenerThread requestListenerThread;
     private ClientAuthentication authentication;
 
+    /**
+     * Creates a HTTPS server given the home, the SSL authentiaction, the port
+     * and the request handlers to use.
+     * 
+     * @param home the file system directory that should be considered the root
+     *             of the server (it may be different than the current working 
+     *             directory - NOT NULL
+     * @param authentication the SSL authentication method to use
+     * @param port the port the serve shall listen to
+     * @param handlers the handlers to be used to process the requests; if null 
+     *                 an empty handlers map will be used - MAY BE NULL
+     */
     public HttpServer(
         final String home, 
         final ClientAuthentication authentication, 
         final int port,
         final HttpRequestHandlerMapper handlers
     ) {
+        if (home == null) {
+            throw new IllegalArgumentException("home can not be null");
+        }
+        if (port <= 0) {
+            throw new IllegalArgumentException("port can not be <= 0");
+        }
+        File fileHome = new File(home);
+        if (!fileHome.exists() || !fileHome.isDirectory()) {
+            throw new IllegalArgumentException(
+                String.format("the given home [%s] must exist and must be a directory", home)
+            );
+        }
         this.port = port;
         this.running = false;
         this.requestListenerThread = null;
