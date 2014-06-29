@@ -145,26 +145,6 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
         }
         
     }
-
-    /*
-    @Test
-    public void noClientAuthentication() throws Exception {
-        SSLContext sc = SSLContext.getInstance("TLS");
-        sc.init(null, null, null);
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-        Configuration c = ConfigurationOne.getInstance();
-        c.setProperty(CONFIG_SERVERONE_AUTH, "none");
-
-        ServerOne.bootstrap();
-
-        Thread.sleep(250);
-
-        URL url = new URL("https://localhost:8443/diskone/readme.txt");
-        then(((HttpsURLConnection)url.openConnection()).getResponseCode())
-            .isEqualTo(HttpsURLConnection.HTTP_OK);
-    }
-    */
     
     // ------------------------------------------------------- protected methods
     
