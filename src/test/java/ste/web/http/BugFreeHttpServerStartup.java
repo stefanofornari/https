@@ -15,87 +15,21 @@
  */
 package ste.web.http;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URL;
-import java.security.KeyStore;
-import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.After;
 import org.junit.Test;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 /**
  * TODO: change castore and keystore's passwords
  *
  * @author ste
  */
-public class BugFreeHttpServer {
-
-    @Rule
-    public final TestRule PRINT_TEST_NAME = new TestWatcher() {
-        protected void starting(Description description) {
-          System.out.printf("\nTEST %s...\n", description.getMethodName());
-        };
-    };
-    
-    @Rule
-    public final TemporaryFolder TESTDIR = new TemporaryFolder();
-    
-    @Rule
-    public final ProvideSystemProperty TRUST_STORE
-	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
-
-    @Rule
-    public final ProvideSystemProperty TRUST_STORE_PWD
-	 = new ProvideSystemProperty("javax.net.ssl.trustStorePassword", "serverone");
-
-    private static SSLContext clientCertificateContext;
-    private HttpServer server = null;
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        Properties props = System.getProperties();
-        props.put("javax.net.ssl.trustStoreType", "jks");
-        props.put("javax.net.ssl.trustStore", "src/test/etc/castore");
-        props.put("javax.net.ssl.trustStorePassword", "serverone");
-
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        FileInputStream fis = new FileInputStream("src/test/etc/mariorossi.p12");
-        ks.load(fis, "serverone".toCharArray());
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, "serverone".toCharArray());
-        clientCertificateContext = SSLContext.getInstance("TLS");
-        clientCertificateContext.init(kmf.getKeyManagers(), null, null);
-    }
-
-    @Before
-    public void setUp() throws Exception  {
-        //File serverone = TESTDIR.newFolder("serverone");
-        //FileUtils.copyDirectory(new File("src/test/serverone-1"), serverone);
-        HttpsURLConnection.setDefaultSSLSocketFactory(clientCertificateContext.getSocketFactory());
-        server = createHttpServer();
-    }
-
-    @After
-    public void tearDown() throws IOException {
-        if (server.isRunning()) {
-            server.stop();
-        }
-    }
+public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
 
     @Test
     public void homeCanNotBeNullInConstructor() throws Exception {
@@ -125,7 +59,6 @@ public class BugFreeHttpServer {
             then(x.getMessage()).contains("must be a directory").contains(EXISTING);
         }
     }
-    
     
     @Test
     public void portCanNotBeNegativeOrZeroInConstructor() throws Exception {
@@ -233,7 +166,7 @@ public class BugFreeHttpServer {
     }
     */
     
-    // --------------------------------------------------------- private methods
+    // ------------------------------------------------------- protected methods
     
     private HttpServer createHttpServer() throws Exception {
         return createServer(HttpServer.ClientAuthentication.NONE);
@@ -243,7 +176,9 @@ public class BugFreeHttpServer {
         return createServer(HttpServer.ClientAuthentication.CERTIFICATE);
     }
     
-    private HttpServer createServer(HttpServer.ClientAuthentication auth) throws Exception {
+    // --------------------------------------------------------- private methods
+    
+    HttpServer createServer(HttpServer.ClientAuthentication auth) throws Exception {
         final String HOME = "src/test";
         final String DOCROOT = "src/test/docroot";
         
