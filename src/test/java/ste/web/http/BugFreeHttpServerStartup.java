@@ -145,34 +145,4 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
         }
         
     }
-    
-    // ------------------------------------------------------- protected methods
-    
-    private HttpServer createHttpServer() throws Exception {
-        return createServer(HttpServer.ClientAuthentication.NONE);
-    }
-    
-    private HttpServer createHttpServerWithClientAuth() throws Exception {
-        return createServer(HttpServer.ClientAuthentication.CERTIFICATE);
-    }
-    
-    // --------------------------------------------------------- private methods
-    
-    HttpServer createServer(HttpServer.ClientAuthentication auth) throws Exception {
-        final String HOME = "src/test";
-        final String DOCROOT = "src/test/docroot";
-        
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(DOCROOT));
-        
-        HttpServer server = new HttpServer(
-            HOME,
-            auth, 
-            8000, 
-            handlers
-        );
-        
-        return server;
-    }
-
 }

@@ -91,11 +91,11 @@ public abstract class BugFreeHttpServerBase {
     
     // ------------------------------------------------------- protected methods
     
-    private HttpServer createHttpServer() throws Exception {
+    protected HttpServer createHttpServer() throws Exception {
         return createServer(HttpServer.ClientAuthentication.NONE);
     }
     
-    private HttpServer createHttpServerWithClientAuth() throws Exception {
+    protected HttpServer createHttpServerWithClientAuth() throws Exception {
         return createServer(HttpServer.ClientAuthentication.CERTIFICATE);
     }
     
