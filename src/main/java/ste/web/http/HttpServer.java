@@ -34,10 +34,8 @@ import javax.net.ssl.KeyManagerFactory;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpServerConnection;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpProcessorBuilder;
-import org.apache.http.protocol.HttpService;
 import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
@@ -45,7 +43,6 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.apache.http.impl.DefaultBHttpServerConnection;
 import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
-import org.apache.http.protocol.HttpContext;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -66,7 +63,7 @@ public class HttpServer {
     
     private SSLServerSocketFactory sf;
     private int port;
-    private HttpService http;
+    private HttpSessionService http;
     private boolean running;
     private RequestListenerThread requestListenerThread;
     private ClientAuthentication authentication;
@@ -140,7 +137,7 @@ public class HttpServer {
         return running;
     }
     
-    public HttpService getHttpService() {
+    public HttpSessionService getHttpService() {
         return http;
     }
     
@@ -159,10 +156,10 @@ public class HttpServer {
 
         // Set up request handlers end HTTP service
         if (handlers != null) {               
-            http = new HttpService(httpproc, handlers);
+            http = new HttpSessionService(httpproc, handlers);
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            http = new HttpService(httpproc, registry);
+            http = new HttpSessionService(httpproc, registry);
         }
     }
     
@@ -234,24 +231,23 @@ public class HttpServer {
 
     static class WorkerThread extends Thread {
 
-        private final HttpService httpservice;
+        private final HttpSessionService http;
         private final HttpServerConnection conn;
 
         public WorkerThread(
-                final HttpService httpservice,
+                final HttpSessionService http,
                 final HttpServerConnection conn) {
             super();
-            this.httpservice = httpservice;
+            this.http = http;
             this.conn = conn;
         }
 
         @Override
         public void run() {
             System.out.println("New connection thread");
-            HttpContext context = new BasicHttpContext(null);
             try {
                 while (!Thread.interrupted() && this.conn.isOpen()) {
-                    this.httpservice.handleRequest(this.conn, context);
+                    this.http.handleRequest(this.conn);
                 }
             } catch (ConnectionClosedException ex) {
                 System.err.println("Client closed connection");

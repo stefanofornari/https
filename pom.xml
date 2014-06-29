@@ -36,6 +36,12 @@
             <version>1.6.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.2.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
     <build>

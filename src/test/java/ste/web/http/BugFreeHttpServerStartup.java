@@ -19,7 +19,6 @@ import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
@@ -143,6 +142,5 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
             // OK
             //
         }
-        
     }
 }

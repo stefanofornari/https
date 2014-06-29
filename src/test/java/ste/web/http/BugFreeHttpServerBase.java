@@ -15,6 +15,7 @@
  */
 package ste.web.http;
 
+import ste.web.http.hendlers.FileHandler;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyStore;
