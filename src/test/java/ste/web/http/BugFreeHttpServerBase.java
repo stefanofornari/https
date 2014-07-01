@@ -49,13 +49,14 @@ public abstract class BugFreeHttpServerBase {
     @Rule
     public final TemporaryFolder TESTDIR = new TemporaryFolder();
     
+    
     @Rule
     public final ProvideSystemProperty TRUST_STORE
 	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
 
     @Rule
     public final ProvideSystemProperty TRUST_STORE_PWD
-	 = new ProvideSystemProperty("javax.net.ssl.trustStorePassword", "serverone");
+	 = new ProvideSystemProperty("javax.net.ssl.trustStorePassword", "20150630");
 
     private static SSLContext clientCertificateContext;
     
@@ -66,13 +67,13 @@ public abstract class BugFreeHttpServerBase {
         Properties props = System.getProperties();
         props.put("javax.net.ssl.trustStoreType", "jks");
         props.put("javax.net.ssl.trustStore", "src/test/etc/castore");
-        props.put("javax.net.ssl.trustStorePassword", "serverone");
+        props.put("javax.net.ssl.trustStorePassword", "20150630");
 
         KeyStore ks = KeyStore.getInstance("PKCS12");
         FileInputStream fis = new FileInputStream("src/test/etc/mariorossi.p12");
-        ks.load(fis, "serverone".toCharArray());
+        ks.load(fis, "20150630".toCharArray());
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, "serverone".toCharArray());
+        kmf.init(ks, "20150630".toCharArray());
         clientCertificateContext = SSLContext.getInstance("TLS");
         clientCertificateContext.init(kmf.getKeyManagers(), null, null);
     }

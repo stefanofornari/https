@@ -51,9 +51,12 @@ import org.apache.http.HttpConnectionFactory;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 
 /**
- * ServerOne http server
+ * An HTTPS server
  * 
  * TODO: requests logging
+ * TODO: certificate parameters shall be read from system properties
+ * TODO: certificates shall be checked at startup and proper information provided
+ *       in case of issues.
  */
 public class HttpServer {
     
@@ -274,11 +277,11 @@ public class HttpServer {
         // TODO: handle the case the client does not send the certificate
         //
         KeyStore keystore = KeyStore.getInstance("jks");
-        keystore.load(new FileInputStream(home + "/etc/keystore"), "serverone".toCharArray());
+        keystore.load(new FileInputStream(home + "/etc/keystore"), "20150630".toCharArray());
         KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
             KeyManagerFactory.getDefaultAlgorithm()
         );
-        kmfactory.init(keystore, "serverone".toCharArray());
+        kmfactory.init(keystore, "20150630".toCharArray());
         KeyManager[] keymanagers = kmfactory.getKeyManagers();
         SSLContext context = SSLContext.getInstance("TLS");
         context.init(keymanagers, null, null);
