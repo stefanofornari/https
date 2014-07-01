@@ -28,7 +28,6 @@ import org.junit.Test;
 import ste.web.http.handlers.PrintSessionHandler;
 
 /**
- * TODO: change castore and keystore's passwords
  *
  * @author ste
  */

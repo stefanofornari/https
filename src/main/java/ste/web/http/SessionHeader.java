@@ -23,8 +23,7 @@ import org.apache.http.ParseException;
 import org.apache.http.message.BasicHeaderElement;
 
 /**
- * TODO: the session cookie should have Path=/
- * @author ste
+ * 
  */
 public class SessionHeader implements Header {
     

@@ -19,7 +19,6 @@ package ste.web.http;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.util.HashMap;
-import java.util.List;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -27,12 +26,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.HttpProcessorBuilder;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.HttpService;
 
 /**
- * TODO: check that context is a HttpSessionContext otherwise throws an 
- *       IllegalArgumentException
  * 
  * TODO: sessions access must be thread safe
  * 
@@ -42,9 +40,21 @@ public class HttpSessionService extends HttpService {
     private HashMap<String, HashMap<String, Object>> sessions;
 
     public HttpSessionService(HttpProcessor processor, HttpRequestHandlerMapper handlerMapper) {
+        //
+        // parameter validation is done in super()
+        //
         super(processor, handlerMapper);
         
         sessions = new HashMap<>();
+    }
+    
+    /**
+     * Creates a HttpSessionService with a basic processor. Mainly used to build
+     * specs.
+     * 
+     */
+    protected HttpSessionService() {
+       super(HttpProcessorBuilder.create().build(), null);
     }
     
     public void handleRequest(final HttpServerConnection c)
@@ -59,10 +69,7 @@ public class HttpSessionService extends HttpService {
     throws HttpException, IOException {
         HttpSession session = (HttpSession)context;
         
-        buildHttpSession(request, session);
-        
-        System.out.println("session header: " + session.getHeader());
-        
+        buildHttpSession(request, session);        
         response.addHeader(session.getHeader());
         
         super.doService(request, response, session);

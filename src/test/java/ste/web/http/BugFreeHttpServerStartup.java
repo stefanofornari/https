@@ -24,7 +24,6 @@ import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
 
 /**
- * TODO: change castore and keystore's passwords
  *
  * @author ste
  */
