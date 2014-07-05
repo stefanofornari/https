@@ -16,9 +16,14 @@
 
 package ste.web.http;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -37,7 +42,7 @@ import org.apache.http.protocol.HttpService;
  */
 public class HttpSessionService extends HttpService {
     
-    private HashMap<String, HashMap<String, Object>> sessions;
+    private LoadingCache<String, HashMap<String, Object>> sessions;
 
     public HttpSessionService(HttpProcessor processor, HttpRequestHandlerMapper handlerMapper) {
         //
@@ -45,17 +50,20 @@ public class HttpSessionService extends HttpService {
         //
         super(processor, handlerMapper);
         
-        sessions = new HashMap<>();
+        Long lifetime = Long.getLong("ste.http.session.lifetime", 15*60*1000);
+        sessions = CacheBuilder.newBuilder()
+                       .expireAfterAccess(lifetime, TimeUnit.MILLISECONDS)
+                       .build(
+                            new CacheLoader<String, HashMap<String, Object>>() {
+                                @Override
+                                public HashMap<String, Object>load(String key) {
+                                    System.out.println("loading " + key);
+                                    return new HashMap<>();
+                                }
+                            }
+                       );
     }
     
-    /**
-     * Creates a HttpSessionService with a basic processor. Mainly used to build
-     * specs.
-     * 
-     */
-    protected HttpSessionService() {
-       super(HttpProcessorBuilder.create().build(), null);
-    }
     
     public void handleRequest(final HttpServerConnection c)
     throws HttpException, IOException {
@@ -87,11 +95,14 @@ public class HttpSessionService extends HttpService {
             }
         }
         
-        HashMap<String, Object> sessionData = sessions.get(session.getId());
-        if (sessionData == null) {
-            sessionData = new HashMap<>();
-            sessions.put(session.getId(), sessionData);
+        HashMap<String, Object> sessionData = null;
+        try {
+            sessionData = sessions.get(session.getId());
+            session.setData(sessionData);
+        } catch (ExecutionException x) {
+            //
+            // nothing to do, sessionData will be null
         }
-        session.setData(sessionData);
+
     }
 }

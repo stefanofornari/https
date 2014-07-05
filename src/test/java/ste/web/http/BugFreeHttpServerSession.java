@@ -24,7 +24,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import ste.web.http.handlers.PrintSessionHandler;
 
 /**
@@ -32,6 +34,9 @@ import ste.web.http.handlers.PrintSessionHandler;
  * @author ste
  */
 public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
+    @Rule
+    public final ProvideSystemProperty SESSION_EXPIRATION_TIME
+	 = new ProvideSystemProperty("ste.http.session.lifetime", String.valueOf(15*60*1000));
 
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {
@@ -125,6 +130,66 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
         // session id and the counter shall restart
         //
         httpclient = new DefaultHttpClient(); 
+        response = httpclient.execute(httpget);
+        then(response.getStatusLine().getStatusCode())
+            .isEqualTo(HttpStatus.SC_OK);
+        
+        cookies = httpclient.getCookieStore().getCookies();
+        then(cookies).isNotEmpty();
+        
+        String newSessionId = null;
+        for (Cookie c: cookies) {
+            if ("JSESSIONID".equals(c.getName())) {
+                newSessionId = c.getValue().replace("\"", "");
+                break;
+            }
+        }
+        then(newSessionId).isNotEqualTo(sessionId);
+        then(EntityUtils.toString(response.getEntity()))
+            .contains(String.format("{id: %s}", newSessionId))
+            .contains("{counter: 1}");
+    }
+    
+    @Test
+    public void sessionExpiration() throws Exception {
+        System.setProperty("ste.http.session.lifetime", String.valueOf(250));
+        
+        server = createHttpServer();
+        server.start(); Thread.sleep(25);
+        
+        DefaultHttpClient httpclient = new DefaultHttpClient();
+        HttpGet httpget = new HttpGet("https://localhost:8000/index.html");
+        
+        HttpResponse response = httpclient.execute(httpget);
+        then(response.getStatusLine().getStatusCode())
+            .isEqualTo(HttpStatus.SC_OK);
+
+        List<Cookie> cookies = httpclient.getCookieStore().getCookies();
+        then(cookies).isNotEmpty();
+        
+        String sessionId = null;
+        for (Cookie c: cookies) {
+            if ("JSESSIONID".equals(c.getName())) {
+                sessionId = c.getValue().replace("\"", "");
+                break;
+            }
+        }
+        
+        //
+        // The output of HttpSessionHandler shall be:
+        //
+        // id: <the session id>
+        // counter: <an autoincremented 1-based value>
+        //
+        then(EntityUtils.toString(response.getEntity()))
+            .contains(String.format("{id: %s}", sessionId))
+            .contains("{counter: 1}");
+        
+        //
+        // If we hit the same URL with the same client withing the expiration 
+        // time, the same session shall be returned
+        //
+        Thread.sleep(1000);
         response = httpclient.execute(httpget);
         then(response.getStatusLine().getStatusCode())
             .isEqualTo(HttpStatus.SC_OK);
