@@ -23,7 +23,6 @@ import org.apache.http.protocol.HttpContext;
 
 /**
  *
- * TODO: session expiration
  */
 public class HttpSession implements HttpContext {
     

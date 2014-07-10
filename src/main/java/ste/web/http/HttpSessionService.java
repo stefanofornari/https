@@ -37,12 +37,12 @@ import org.apache.http.protocol.HttpService;
 
 /**
  * 
- * TODO: sessions access must be thread safe
+ * TODO: HttpSessionServiceBuilder
  * 
  */
 public class HttpSessionService extends HttpService {
     
-    private LoadingCache<String, HashMap<String, Object>> sessions;
+    private SessionCache sessions;
 
     public HttpSessionService(HttpProcessor processor, HttpRequestHandlerMapper handlerMapper) {
         //
@@ -51,17 +51,7 @@ public class HttpSessionService extends HttpService {
         super(processor, handlerMapper);
         
         Long lifetime = Long.getLong("ste.http.session.lifetime", 15*60*1000);
-        sessions = CacheBuilder.newBuilder()
-                       .expireAfterAccess(lifetime, TimeUnit.MILLISECONDS)
-                       .build(
-                            new CacheLoader<String, HashMap<String, Object>>() {
-                                @Override
-                                public HashMap<String, Object>load(String key) {
-                                    System.out.println("loading " + key);
-                                    return new HashMap<>();
-                                }
-                            }
-                       );
+        sessions = new SessionCache(lifetime);
     }
     
     
@@ -95,14 +85,6 @@ public class HttpSessionService extends HttpService {
             }
         }
         
-        HashMap<String, Object> sessionData = null;
-        try {
-            sessionData = sessions.get(session.getId());
-            session.setData(sessionData);
-        } catch (ExecutionException x) {
-            //
-            // nothing to do, sessionData will be null
-        }
-
+        session = sessions.get(session.getId());
     }
 }
