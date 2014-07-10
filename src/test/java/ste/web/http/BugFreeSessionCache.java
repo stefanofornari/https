@@ -20,7 +20,6 @@ import java.util.HashMap;
 import static org.assertj.core.api.BDDAssertions.then;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
-import ste.xtest.reflect.CodeInjector;
 
 /**
  *

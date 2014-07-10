@@ -52,18 +52,6 @@ public class BugFreeHttpSession {
     }
     
     @Test
-    public void sessiondDataCanNotBeNull() {
-        HttpSession s = new HttpSession();
-        
-        try {
-           s.setData(null);
-           fail("missing illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("data can not be null");
-        }
-    }
-    
-    @Test
     public void setGetRemoveAttributeOK() {
         HttpSession s = new HttpSession();
         s.setAttribute("string", "hello world");

@@ -69,15 +69,17 @@ public class HttpSessionService extends HttpService {
     // --------------------------------------------------------- private methods
     
     private void buildHttpSession(HttpRequest request, HttpSession session) {
+        String sessionId = null;
         for (Header h: request.getHeaders("Cookie")) {
             HttpCookie cookie = HttpCookie.parse(h.getValue()).get(0);
             if ("JSESSIONID".equals(cookie.getName())) {
-                String id = cookie.getValue();
-                session.setId(id);
+                sessionId = cookie.getValue();
                 break;
             }
         }
         
-        session = sessions.get(session.getId());
+        HttpSession existingSession = sessions.get(sessionId);
+        session.setId(existingSession.getId());
+        session.putAll(existingSession);
     }
 }

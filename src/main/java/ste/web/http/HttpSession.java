@@ -24,14 +24,14 @@ import org.apache.http.protocol.HttpContext;
 /**
  *
  */
-public class HttpSession implements HttpContext {
+public class HttpSession 
+extends HashMap<String, Object> 
+implements HttpContext {
     
     private String id;
-    private HashMap<String, Object> data;
-    
+
     public HttpSession() {
         this.id = UUID.randomUUID().toString().replace("-", "");
-        this.data = new HashMap<>();
     }
     
     /**
@@ -66,12 +66,11 @@ public class HttpSession implements HttpContext {
         return id;
     }
     
-    @Override
     public Object getAttribute(final String name) {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        return data.get(name);
+        return get(name);
     }
     
     @Override
@@ -79,7 +78,7 @@ public class HttpSession implements HttpContext {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        data.put(name, value);
+        put(name, value);
     }
     
     @Override
@@ -87,21 +86,6 @@ public class HttpSession implements HttpContext {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        return data.remove(name);
-    }
-    
-    // -------------------------------------------------------- package methdods
-    
-    /**
-     * Used to set the attribute map.
-     * 
-     * @param data the attribute map - NOT NULL
-     */
-    void setData(final HashMap<String, Object> data) {
-        if (data == null) {
-            throw new IllegalArgumentException("data can not be null");
-        }
-        this.data = data;
+        return remove(name);
     }    
-    
 }
