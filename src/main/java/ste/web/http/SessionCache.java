@@ -74,33 +74,56 @@ class SessionCache extends HashMap<String, HttpSession> {
     }
     
     /**
-     * Returns the session with the given id if id is not null, the session is 
-     * available in the cache and the entry has not expired yet. If id is null a
-     * new session is returned.
+     * Puts the given session in the cache, replacing an existing one with the 
+     * same session Id if already cached. If a session with same id is already
+     * in the cache, the values of the existing sessions are stored in the new 
+     * one.
      * 
-     * @param id the session id - MAY BE NULL
+     * @param session the session id - NOT NULL
      * 
      * @return the session with the given id if found in the cache, or a new
      *         session if id is null or a session with the given id is not found
      *         or expired.
      */
-    public synchronized HttpSession get(final String id) {
-        Long lastTS = (id != null) ? lastAccess.get(id) : null;
-        if ((id == null) || (lastTS == null) || System.currentTimeMillis()-lastTS > lifetime) {
+    public synchronized HttpSession put(final HttpSession session) {
+        String id = session.getId();
+        Long lastTS = lastAccess.get(id);
+        if ((lastTS == null) || isExpired(lastTS)) {
             expireSession(id);
-            HttpSession s = new HttpSession();
-            put(s.getId(), s);  // this performs traceAccess()
+            put(id, session);  // this performs traceAccess()
             purge();
             
-            return s;
+            return null;
+        }
+        
+        HttpSession oldSession = get(session.getId());
+        if (oldSession != null) {
+            session.putAll(oldSession);
         }
     
         traceAccess(id);
         purge();
-        return (HttpSession)super.get(id);
+        return (HttpSession)super.put(id, session);
     }
     
+    public HttpSession get(final String id) {
+        purge();
+        
+        Long lastTS = lastAccess.get(id);
+        if ((lastTS == null) || isExpired(lastTS)) {
+            return null;
+        }
+        traceAccess(id);
+        
+        return (HttpSession)super.get(id);
+    }
+
     // --------------------------------------------------------- private methods
+    
+    private boolean isExpired(Long lastTS) {
+        long ts = System.currentTimeMillis();
+        return (lifetime != 0) && (ts-lastTS > lifetime);
+    }
     
     protected void expireSession(String id) {
         if ((lifetime > 0) && (id != null)) {
@@ -127,7 +150,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         for (Object o: access) {
             Map.Entry<String, Long> a = (Map.Entry<String, Long>)o;
             long lastTS = a.getValue();
-            if (System.currentTimeMillis()-lastTS > lifetime) {
+            if (isExpired(lastTS)) {
                 expireSession(a.getKey());
             }
         }

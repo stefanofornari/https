@@ -18,12 +18,15 @@ package ste.web.http;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.Ignore;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
 
 /**
  *
  * TODO: when the session is expired, all data shall be cleaned
+ * TODO: synchronize also get()?
+ * TODO: sanity check for get
  */
 public class BugFreeSessionCache {
     
@@ -47,86 +50,79 @@ public class BugFreeSessionCache {
             then(s.getLifetime()).isZero();
         }
     }
-    
+        
     @Test
-    public void getNewSession() {
-        HttpSession s;
-        SessionCache c = new SessionCache(0);
-        then(s = c.get(null)).isNotNull();
-        then(c.get(null).getId()).isNotEqualTo(s.getId());
-    }
-    
-    @Test
-    public void getExistingSession() {
+    public void mergeExistingSession() throws Exception {
         SessionCache c = new SessionCache(0);
         
-        HttpSession s = c.get(null);
-        then(c.get(s.getId())).isSameAs(s);
+        HttpSession s1 = new HttpSession();
+        s1.setAttribute("test1", "value1");
+        
+        c.put(s1);
+        then(c.get(s1.getId())).isSameAs(s1);
+        
+        HttpSession s2 = new HttpSession();
+        s2.setId(s1.getId()); c.put(s2);
+        then(c.get(s2.getId())).isSameAs(s2);
+        then(s2.getAttribute("test1")).isEqualTo("value1");
     }
     
     @Test
-    public void expireUnusedSessionDoNotExpireUsedSession() throws Exception {
+    public void doNotExpireUsedSession() throws Exception {
         final long TEST_LIFETIME = 250;
         SessionCache c = new SessionCache(TEST_LIFETIME);
         
-        HttpSession s1 = c.get(null);
-        HttpSession s2 = c.get(null);
+        HttpSession s = new HttpSession(); c.put(s);
         
         long ts = System.currentTimeMillis();
         while (System.currentTimeMillis()-ts <= TEST_LIFETIME) {
             Thread.sleep(50);
-            c.get(s2.getId());
+            c.get(s.getId());
         }
-        then(c.get(s2.getId()).getId()).isEqualTo(s2.getId()); // still the same
-        then(c.get(s1.getId()).getId()).isNotEqualTo(s1.getId()); // new
+        then(c.get(s.getId()).getId()).isEqualTo(s.getId()); // still the same
+    }
         
-        //
-        // check that the maps has been clened up
-        //
-        HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
-        then(lastAccess).hasSize(2);
-        then(c).hasSize(2);
+    @Test
+    public void expireUnusedSession() throws Exception {
+        final long TEST_LIFETIME = 50;
+        SessionCache c = new SessionCache(TEST_LIFETIME);
+        
+        HttpSession s = new HttpSession(); c.put(s);
+        
+        Thread.sleep(100);
+        then(c.get(s.getId())).isNull();
     }
     
     @Test
-    public void expireAllUnusedSessions() throws Exception {
-        final long TEST_LIFETIME = 200;
-        final long TEST_PURGETIME = 500;
-        SessionCache c = new SessionCache(TEST_LIFETIME, TEST_PURGETIME);
-        
-        HttpSession s1 = c.get(null);
-        HttpSession s2 = c.get(null);
-        HttpSession s3 = c.get(null);
-        
-        long ts = System.currentTimeMillis();
-        while (System.currentTimeMillis()-ts <= TEST_LIFETIME) {
-            Thread.sleep(10);
-            c.get(s2.getId());
-        }
-        then(c.get(s2.getId()).getId()).isEqualTo(s2.getId()); // still the same
-        
+    public void purgeExpiredSessions() throws Exception {
+        SessionCache c = new SessionCache(75, 200);
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
-        then(lastAccess).hasSize(3);
-        then(c).hasSize(3);
+        
+        HttpSession s1 = new HttpSession(); c.put(s1); Thread.sleep(25);
+        HttpSession s2 = new HttpSession(); c.put(s2); Thread.sleep(25);
         
         //
-        // let's expire s2 too; s2 will expire only after purgePeriod 
-        // milliseconds, therefore the first time no items will be purged
+        // Before a session expires, I get it; once expired I get null, but 
+        // lastAccess still contains it; after purgetime lastAccess shall be
+        // empty
         //
-        Thread.sleep(TEST_LIFETIME + 10); c.get(s2.getId());
-        then(lastAccess).hasSize(3);
-        then(c).hasSize(3);
-        
-        Thread.sleep(TEST_LIFETIME);
-        c.get(s2.getId());
-        then(lastAccess).hasSize(1);
-        then(c).hasSize(1);
+        then(c.get(s1.getId())).isNotNull();
+        then(lastAccess).hasSize(2);
+        Thread.sleep(50);
+        then(c.get(s1.getId())).isNotNull();
+        then(c.get(s2.getId())).isNull();
+        then(lastAccess).isNotEmpty();
+        Thread.sleep(200);
+        then(c.get(s1.getId())).isNull();
+        then(c.get(s2.getId())).isNull();
+        then(lastAccess).isEmpty();
     }
     
     @Test
     public void noExpiration() throws Exception {
         SessionCache c = new SessionCache(0);
-        HttpSession s = c.get(null);
+        HttpSession s = new HttpSession();
+        c.put(s);
         
         Method m = SessionCache.class.getDeclaredMethod("expireSession", String.class);
         m.setAccessible(true); m.invoke(c, s.getId());

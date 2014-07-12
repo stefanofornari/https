@@ -74,12 +74,11 @@ public class HttpSessionService extends HttpService {
             HttpCookie cookie = HttpCookie.parse(h.getValue()).get(0);
             if ("JSESSIONID".equals(cookie.getName())) {
                 sessionId = cookie.getValue();
+                session.setId(sessionId);
                 break;
             }
         }
         
-        HttpSession existingSession = sessions.get(sessionId);
-        session.setId(existingSession.getId());
-        session.putAll(existingSession);
+        sessions.get(session);
     }
 }
