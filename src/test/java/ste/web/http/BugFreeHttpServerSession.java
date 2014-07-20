@@ -204,7 +204,7 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
                 break;
             }
         }
-        then(newSessionId).isNotEqualTo(sessionId);
+        then(newSessionId).isEqualTo(sessionId);
         then(EntityUtils.toString(response.getEntity()))
             .contains(String.format("{id: %s}", newSessionId))
             .contains("{counter: 1}");

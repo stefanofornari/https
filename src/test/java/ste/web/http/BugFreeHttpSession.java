@@ -105,4 +105,51 @@ public class BugFreeHttpSession {
         then(cookie.getName()).isEqualTo("JSESSIONID");
         then(cookie.getValue()).isEqualTo(s.getId());
     }
+    
+    @Test
+    public void noAccessAfterExpiration() {
+        HttpSession s = new HttpSession();
+        s.expire();
+        
+        //
+        // getId() is ok, all other methods shall be blocked
+        //
+        
+        then(s.getId()).isNotNull();
+        
+        try {
+            s.setAttribute("test", null);
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
+        
+        try {
+            s.getAttribute("test");
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
+        
+        try {
+            s.removeAttribute("test");
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
+        
+        try {
+            s.setId("123456");
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
+        
+        try {
+            s.getHeader();
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
+    }
 }

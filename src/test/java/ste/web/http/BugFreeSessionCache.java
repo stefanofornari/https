@@ -17,15 +17,14 @@ package ste.web.http;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
 
 /**
  *
- * TODO: when the session is expired, all data shall be cleaned
  * TODO: synchronize also get()?
- * TODO: sanity check for get
  */
 public class BugFreeSessionCache {
     
@@ -70,10 +69,14 @@ public class BugFreeSessionCache {
         final long TEST_LIFETIME = 50;
         SessionCache c = new SessionCache(TEST_LIFETIME);
         
-        HttpSession s = new HttpSession(); c.put(s);
+        HttpSession s = c.get(null); s.setAttribute("TEST", "test");
         
-        Thread.sleep(100);
-        then(c.get(s.getId()).getId()).isNotEqualTo(s.getId());
+        Thread.sleep(75);
+        //
+        // When expired, I still get a session with same id, but values will be
+        // gone
+        //
+        then(c.get(s.getId()).getAttribute("TEST")).isNull();
     }
     
     @Test
@@ -81,24 +84,23 @@ public class BugFreeSessionCache {
         SessionCache c = new SessionCache(75, 200);
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
         
-        HttpSession s1 = c.get(null); Thread.sleep(25);
-        HttpSession s2 = c.get(null); Thread.sleep(25);
+        HttpSession s1 = c.get(null); s1.setAttribute("TEST1", "test1"); Thread.sleep(25);
+        HttpSession s2 = c.get(null); s1.setAttribute("TEST2", "test2"); Thread.sleep(25);
         
         //
-        // Before a session expires, I get it; once expired I get null, but 
-        // lastAccess still contains it; after purgetime lastAccess shall be
+        // Before a session expires, I get it; once expired I get a new session,
+        // but lastAccess still contains it; after purgetime lastAccess shall be
         // empty
         //
         then(c.get(s1.getId())).isNotNull();
         then(lastAccess).hasSize(2);
         Thread.sleep(50);
         then(c.get(s1.getId())).isNotNull();
-        then(c.get(s2.getId()).getId()).isNotEqualTo(s2.getId());
-        then(lastAccess).hasSize(3); // a new session has been added
-        Thread.sleep(200);
-        then(c.get(s1.getId()).getId()).isNotEqualTo(s1.getId());
-        then(c.get(s2.getId()).getId()).isNotEqualTo(s2.getId());
+        then(c.get(s2.getId()).getAttribute("TEST2")).isNull();
         then(lastAccess).hasSize(2);
+        
+        Thread.sleep(200); c.get(null); // triggering purge
+        
         then(lastAccess)
             .doesNotContainKey(s1.getId())
             .doesNotContainKey(s2.getId());
@@ -124,7 +126,7 @@ public class BugFreeSessionCache {
         SessionCache c = new SessionCache(0);
         HttpSession s = c.get(null);
         
-        then(s).isNotNull().isEmpty();
+        then(s).isNotNull();
         then(s.getId()).isNotNull();
     }
     
@@ -133,8 +135,24 @@ public class BugFreeSessionCache {
         SessionCache c = new SessionCache(0);
         HttpSession s = c.get("notexistingid");
         
-        then(s).isNotNull().isEmpty();
+        then(s).isNotNull();
         then(s.getId()).isNotNull();
+    }
+    
+    @Test
+    public void sessionIsNotAccessibleAnyMoreAfterExpiration() throws Exception {
+        SessionCache c = new SessionCache(50, 50);
+        HttpSession s = c.get(null);
+        
+        Thread.sleep(75); // the session shall be expired now
+        c.get(null); // to trigger clean up
+        
+        try {
+            s.setAttribute("test", null);
+            fail("session should not be accessible after expiration!");
+        } catch (IllegalStateException x) {
+            then(x.getMessage()).contains(s.getId()).contains("expired");
+        }
     }
     
 }

@@ -17,6 +17,7 @@
 package ste.web.http;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.protocol.HttpContext;
@@ -24,14 +25,17 @@ import org.apache.http.protocol.HttpContext;
 /**
  *
  */
-public class HttpSession 
-extends HashMap<String, Object> 
+public class HttpSession
 implements HttpContext {
     
+    private Map<String, Object> data;
     private String id;
+    private boolean expired;
 
     public HttpSession() {
         this.id = UUID.randomUUID().toString().replace("-", "");
+        this.expired = false;
+        this.data = new HashMap<>();
     }
     
     /**
@@ -40,6 +44,7 @@ implements HttpContext {
      * @return the HTTP header to keep this session object
      */
     public SessionHeader getHeader() {
+        checkExpired();
         return new SessionHeader(id);
     }
     
@@ -54,6 +59,7 @@ implements HttpContext {
         if (StringUtils.isBlank(id)) {
             throw new IllegalArgumentException("id can not be blank");
         }
+        checkExpired();
         this.id = id;
     }
     
@@ -70,7 +76,8 @@ implements HttpContext {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        return get(name);
+        checkExpired();
+        return data.get(name);
     }
     
     @Override
@@ -78,7 +85,8 @@ implements HttpContext {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        put(name, value);
+        checkExpired();
+        data.put(name, value);
     }
     
     @Override
@@ -86,6 +94,20 @@ implements HttpContext {
         if (name == null) {
             throw new IllegalArgumentException("name can not be null");
         }
-        return remove(name);
-    }    
+        checkExpired();
+        return data.remove(name);
+    }
+    
+    public void expire() {
+        expired = true;
+        System.out.printf("hash: %d, id: %s expired\n", hashCode(), getId());
+    }
+    
+    // --------------------------------------------------------- private methods
+    
+    private void checkExpired() throws IllegalStateException {
+        if (expired) {
+            throw new IllegalStateException("session " + id + " is expired");
+        }
+    }
 }

@@ -85,34 +85,32 @@ class SessionCache extends HashMap<String, HttpSession> {
      *         session if id is null or a session with the given id is not found
      *         or expired.
      */
-    public synchronized HttpSession put(final HttpSession session) {
+    public synchronized HttpSession put(HttpSession session) {
         String id = session.getId();
         Long lastTS = lastAccess.get(id);
         if ((lastTS == null) || isExpired(lastTS)) {
-            expireSession(id);
-            put(id, session);  // this performs traceAccess()
-            purge();
+            session = new HttpSession();
+            id = session.getId();
+        }
             
-            return null;
-        }
-        
-        HttpSession oldSession = get(session.getId());
-        if (oldSession != null) {
-            session.putAll(oldSession);
-        }
-    
         traceAccess(id);
         purge();
-        return (HttpSession)super.put(id, session);
+        super.put(id, session);
+        
+        return session;
     }
    
     public HttpSession get(final String id) {
-        HttpSession session =  (HttpSession)super.get(id);
+        HttpSession session = (HttpSession)super.get(id);
         
         purge();
         Long lastTS = lastAccess.get(id);
         if ((lastTS == null) || isExpired(lastTS) || (session == null)) {
-            put(session = new HttpSession());
+            session = new HttpSession();
+            if (id != null) {
+                session.setId(id);
+            }
+            super.put(session.getId(), session);
         }
         traceAccess(session.getId());
         
@@ -126,8 +124,12 @@ class SessionCache extends HashMap<String, HttpSession> {
         return (lifetime != 0) && (ts-lastTS > lifetime);
     }
     
-    protected void expireSession(String id) {
+    protected void expireSession(final String id) {
         if ((lifetime > 0) && (id != null)) {
+            HttpSession session = (HttpSession)super.get(id);
+            if (session != null) {
+                session.expire();
+            }
             remove(id);
             lastAccess.remove(id);
         }

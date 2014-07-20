@@ -149,8 +149,6 @@ public class HttpServer {
     }
     
     /**
-     * TODO: bug free code
-     * 
      * @param handlers the new handlers; if null, no handlers will be set - MAYBE NULL
      */
     public void setHandlers(HttpRequestHandlerMapper handlers) {
