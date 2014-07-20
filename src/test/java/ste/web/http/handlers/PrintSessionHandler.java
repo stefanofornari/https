@@ -25,6 +25,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import ste.web.http.HttpSession;
+import ste.web.http.HttpSessionContext;
 
 public class PrintSessionHandler implements HttpRequestHandler  {
     
@@ -39,16 +40,17 @@ public class PrintSessionHandler implements HttpRequestHandler  {
         
     }
 
+    @Override
     public void handle(
             final HttpRequest request,
             final HttpResponse response,
             final HttpContext context) throws HttpException, IOException {
                 
-        HttpSession session = (HttpSession)context;
+        HttpSession session = ((HttpSessionContext)context).getSession();
         
         Long counterAttribute = (Long)session.getAttribute(ATTRIBUTE_COUNTER);
         long counter = (counterAttribute == null) 
-                     ? 1 : counterAttribute.longValue()+1;
+                     ? 1 : counterAttribute+1;
         
         System.out.println("request: " + request);
         

@@ -50,7 +50,7 @@ public class HttpSessionService extends HttpService {
     
     public void handleRequest(final HttpServerConnection c)
     throws HttpException, IOException {
-        super.handleRequest(c, new HttpSession());
+        super.handleRequest(c, new HttpSessionContext());
     }
     
     // ------------------------------------------------------- protected methods
@@ -58,27 +58,25 @@ public class HttpSessionService extends HttpService {
     @Override
     protected void doService(HttpRequest request, HttpResponse response, HttpContext context) 
     throws HttpException, IOException {
-        HttpSession session = (HttpSession)context;
+        selectSession(request, (HttpSessionContext)context);
         
-        buildHttpSession(request, session);        
-        response.addHeader(session.getHeader());
+        response.addHeader(((HttpSessionContext)context).getSession().getHeader());
         
-        super.doService(request, response, session);
+        super.doService(request, response, context);
     }
     
     // --------------------------------------------------------- private methods
     
-    private void buildHttpSession(HttpRequest request, HttpSession session) {
+    private void selectSession(HttpRequest request, HttpSessionContext context) {
         String sessionId = null;
         for (Header h: request.getHeaders("Cookie")) {
             HttpCookie cookie = HttpCookie.parse(h.getValue()).get(0);
             if ("JSESSIONID".equals(cookie.getName())) {
                 sessionId = cookie.getValue();
-                session.setId(sessionId);
                 break;
             }
         }
         
-        sessions.get(session);
+        context.setSession(sessions.get(sessionId));
     }
 }

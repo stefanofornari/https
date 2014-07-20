@@ -18,7 +18,6 @@ package ste.web.http;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.Ignore;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
 
@@ -50,22 +49,6 @@ public class BugFreeSessionCache {
             then(s.getLifetime()).isZero();
         }
     }
-        
-    @Test
-    public void mergeExistingSession() throws Exception {
-        SessionCache c = new SessionCache(0);
-        
-        HttpSession s1 = new HttpSession();
-        s1.setAttribute("test1", "value1");
-        
-        c.put(s1);
-        then(c.get(s1.getId())).isSameAs(s1);
-        
-        HttpSession s2 = new HttpSession();
-        s2.setId(s1.getId()); c.put(s2);
-        then(c.get(s2.getId())).isSameAs(s2);
-        then(s2.getAttribute("test1")).isEqualTo("value1");
-    }
     
     @Test
     public void doNotExpireUsedSession() throws Exception {
@@ -90,7 +73,7 @@ public class BugFreeSessionCache {
         HttpSession s = new HttpSession(); c.put(s);
         
         Thread.sleep(100);
-        then(c.get(s.getId())).isNull();
+        then(c.get(s.getId()).getId()).isNotEqualTo(s.getId());
     }
     
     @Test
@@ -98,8 +81,8 @@ public class BugFreeSessionCache {
         SessionCache c = new SessionCache(75, 200);
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
         
-        HttpSession s1 = new HttpSession(); c.put(s1); Thread.sleep(25);
-        HttpSession s2 = new HttpSession(); c.put(s2); Thread.sleep(25);
+        HttpSession s1 = c.get(null); Thread.sleep(25);
+        HttpSession s2 = c.get(null); Thread.sleep(25);
         
         //
         // Before a session expires, I get it; once expired I get null, but 
@@ -110,12 +93,15 @@ public class BugFreeSessionCache {
         then(lastAccess).hasSize(2);
         Thread.sleep(50);
         then(c.get(s1.getId())).isNotNull();
-        then(c.get(s2.getId())).isNull();
-        then(lastAccess).isNotEmpty();
+        then(c.get(s2.getId()).getId()).isNotEqualTo(s2.getId());
+        then(lastAccess).hasSize(3); // a new session has been added
         Thread.sleep(200);
-        then(c.get(s1.getId())).isNull();
-        then(c.get(s2.getId())).isNull();
-        then(lastAccess).isEmpty();
+        then(c.get(s1.getId()).getId()).isNotEqualTo(s1.getId());
+        then(c.get(s2.getId()).getId()).isNotEqualTo(s2.getId());
+        then(lastAccess).hasSize(2);
+        then(lastAccess)
+            .doesNotContainKey(s1.getId())
+            .doesNotContainKey(s2.getId());
     }
     
     @Test
@@ -132,5 +118,23 @@ public class BugFreeSessionCache {
         m.setAccessible(true); m.invoke(c);
         then(c).hasSize(1);
     }
-
+    
+    @Test
+    public void newSessionWhenIdIsNull() throws Exception {
+        SessionCache c = new SessionCache(0);
+        HttpSession s = c.get(null);
+        
+        then(s).isNotNull().isEmpty();
+        then(s.getId()).isNotNull();
+    }
+    
+    @Test
+    public void newSessionWhenIdIsNotFound() throws Exception {
+        SessionCache c = new SessionCache(0);
+        HttpSession s = c.get("notexistingid");
+        
+        then(s).isNotNull().isEmpty();
+        then(s.getId()).isNotNull();
+    }
+    
 }

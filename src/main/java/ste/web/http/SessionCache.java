@@ -105,17 +105,18 @@ class SessionCache extends HashMap<String, HttpSession> {
         purge();
         return (HttpSession)super.put(id, session);
     }
-    
+   
     public HttpSession get(final String id) {
+        HttpSession session =  (HttpSession)super.get(id);
+        
         purge();
-        
         Long lastTS = lastAccess.get(id);
-        if ((lastTS == null) || isExpired(lastTS)) {
-            return null;
+        if ((lastTS == null) || isExpired(lastTS) || (session == null)) {
+            put(session = new HttpSession());
         }
-        traceAccess(id);
+        traceAccess(session.getId());
         
-        return (HttpSession)super.get(id);
+        return session;
     }
 
     // --------------------------------------------------------- private methods
