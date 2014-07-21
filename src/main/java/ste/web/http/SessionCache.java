@@ -81,7 +81,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         throw new UnsupportedOperationException("putAll() is unsupported; use get(null) instead");
     }
        
-    public HttpSession get(final String id) {
+    public synchronized HttpSession get(final String id) {
         HttpSession session = (HttpSession)super.get(id);
         
         purge();
@@ -100,12 +100,12 @@ class SessionCache extends HashMap<String, HttpSession> {
 
     // --------------------------------------------------------- private methods
     
-    private boolean isExpired(Long lastTS) {
+    protected boolean isExpired(Long lastTS) {
         long ts = System.currentTimeMillis();
         return (lifetime != 0) && (ts-lastTS > lifetime);
     }
     
-    protected void expireSession(final String id) {
+    private void expireSession(final String id) {
         if ((lifetime > 0) && (id != null)) {
             HttpSession session = (HttpSession)super.get(id);
             if (session != null) {
@@ -116,7 +116,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         }
     }
     
-    protected void traceAccess(String id) {
+    private void traceAccess(String id) {
         lastAccess.put(id, System.currentTimeMillis());
     }
     

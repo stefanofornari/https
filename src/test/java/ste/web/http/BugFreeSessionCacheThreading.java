@@ -25,22 +25,22 @@ import org.junit.Test;
  */
 public class BugFreeSessionCacheThreading {
     @Test
-    public void concurrentNewSessions() throws Exception {
-        SessionCache c = new TestSessionCache();
+    public void concurrentAccessToExpiredSessionResultsInOneSessionOnly() throws Exception {
+        SessionCache c = new TestSessionCache(25);
         HttpSession s = c.get(null);
         
         ((TestSessionCache)c).LATCH = new CountDownLatch(1);
         
-        TestTask t1 = new TestTask(c, s);
-        TestTask t2 = new TestTask(c, s);
+        TestTask t1 = new TestTask(c, s.getId());
+        TestTask t2 = new TestTask(c, s.getId());
         
         Thread th1 = new Thread(t1); th1.start();  // now t1 is blocked on traceAccess()
         Thread th2 = new Thread(t2); th2.start();  // now t1 enters the critical section and block on expireSession
         
-        Thread.sleep(100); // let's give some time to get blocked
+        Thread.sleep(50); // let's give some time to get blocked
         
         //
-        // release the latches and wait for termination
+        // release the latch and wait for termination
         //
         ((TestSessionCache)c).LATCH.countDown();
         th1.join(); th2.join();
@@ -49,6 +49,7 @@ public class BugFreeSessionCacheThreading {
         // we should have a valid session
         //
         then(t1.session.getId()).isEqualTo(t2.session.getId());
+        then(t1.session).isSameAs(t2.session);
     }
     
     // -------------------------------------------------------------------------
@@ -58,39 +59,33 @@ public class BugFreeSessionCacheThreading {
         
         private SessionCache cache;
         private HttpSession session;
+        private String id;
         
-        public boolean done;
-        
-        public TestTask(SessionCache c, HttpSession s) {
+        public TestTask(SessionCache c, String id) {
             this.cache = c;
-            this.session = s;
+            this.id = id;
+            this.session = null;
         }
         
         @Override
         public void run() {
-            done = false;
-            session = cache.get(session.getId());
-            done = true;
+            session = cache.get(id);
         }
     }
     
     private class TestSessionCache extends SessionCache {
         public CountDownLatch LATCH = null;
         
-        @Override
-        protected void expireSession(String id) {
-            if (LATCH != null) {
-                try { LATCH.await(); } catch (InterruptedException x) {};
-            }
-            super.expireSession(id);
+        public TestSessionCache(long lifetime) {
+            super(lifetime);
         }
-    
+        
         @Override
-        protected void traceAccess(String id) {
+        protected boolean isExpired(Long ts) {
             if (LATCH != null) {
                 try { LATCH.await(); } catch (InterruptedException x) {};
             }
-            super.traceAccess(id);
+            return super.isExpired(ts);
         }
     }
 }

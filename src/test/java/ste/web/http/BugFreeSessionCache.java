@@ -24,7 +24,6 @@ import org.junit.Test;
 
 /**
  *
- * TODO: synchronize get()
  */
 public class BugFreeSessionCache {
     
