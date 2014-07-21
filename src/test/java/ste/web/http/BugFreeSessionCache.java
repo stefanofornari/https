@@ -24,7 +24,7 @@ import org.junit.Test;
 
 /**
  *
- * TODO: synchronize also get()?
+ * TODO: synchronize get()
  */
 public class BugFreeSessionCache {
     
@@ -50,11 +50,34 @@ public class BugFreeSessionCache {
     }
     
     @Test
+    public void disablePutX() throws Exception {
+        //
+        // get(null) creates new items and put them in the cache; we disable 
+        // the use of put() and putAll() for now
+        //
+        SessionCache c = new SessionCache();
+        try {
+            HttpSession s = new HttpSession();
+            c.put(s.getId(), s);
+            fail("put shall be disabled");
+        } catch (UnsupportedOperationException x) {
+           then(x.getMessage()).contains("put()").contains("unsupported");
+        }
+        
+        try {
+            c.putAll(new HashMap<String, HttpSession>());
+            fail("putAll shall be disabled");
+        } catch (UnsupportedOperationException x) {
+           then(x.getMessage()).contains("putAll()").contains("unsupported");
+        }
+    }
+    
+    @Test
     public void doNotExpireUsedSession() throws Exception {
         final long TEST_LIFETIME = 250;
         SessionCache c = new SessionCache(TEST_LIFETIME);
         
-        HttpSession s = new HttpSession(); c.put(s);
+        HttpSession s = c.get(null);
         
         long ts = System.currentTimeMillis();
         while (System.currentTimeMillis()-ts <= TEST_LIFETIME) {
@@ -109,8 +132,7 @@ public class BugFreeSessionCache {
     @Test
     public void noExpiration() throws Exception {
         SessionCache c = new SessionCache(0);
-        HttpSession s = new HttpSession();
-        c.put(s);
+        HttpSession s = c.get(null);
         
         Method m = SessionCache.class.getDeclaredMethod("expireSession", String.class);
         m.setAccessible(true); m.invoke(c, s.getId());

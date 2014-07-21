@@ -65,41 +65,22 @@ class SessionCache extends HashMap<String, HttpSession> {
         return lifetime;
     }
     
+    /**
+     * @throws UnsupportedOperationException - use get(null) instead
+     */
     @Override
     public HttpSession put(String id, HttpSession session) {
-        HttpSession ret = super.put(id, session);
-        traceAccess(id);
-        
-        return ret;
+        throw new UnsupportedOperationException("put() is unsupported; use get(null) instead");
     }
     
     /**
-     * Puts the given session in the cache, replacing an existing one with the 
-     * same session Id if already cached. If a session with same id is already
-     * in the cache, the values of the existing sessions are stored in the new 
-     * one.
-     * 
-     * @param session the session id - NOT NULL
-     * 
-     * @return the session with the given id if found in the cache, or a new
-     *         session if id is null or a session with the given id is not found
-     *         or expired.
+     * @throws UnsupportedOperationException - use get(null) instead
      */
-    public synchronized HttpSession put(HttpSession session) {
-        String id = session.getId();
-        Long lastTS = lastAccess.get(id);
-        if ((lastTS == null) || isExpired(lastTS)) {
-            session = new HttpSession();
-            id = session.getId();
-        }
-            
-        traceAccess(id);
-        purge();
-        super.put(id, session);
-        
-        return session;
+    @Override
+    public void putAll(Map<? extends String, ? extends HttpSession> map) {
+        throw new UnsupportedOperationException("putAll() is unsupported; use get(null) instead");
     }
-   
+       
     public HttpSession get(final String id) {
         HttpSession session = (HttpSession)super.get(id);
         
