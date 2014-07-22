@@ -18,12 +18,16 @@ package ste.web.http;
 
 import java.io.IOException;
 import java.net.HttpCookie;
+import java.net.InetAddress;
+import java.util.logging.Logger;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
+import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.HttpService;
@@ -34,6 +38,10 @@ import org.apache.http.protocol.HttpService;
  * 
  */
 public class HttpSessionService extends HttpService {
+    
+    public static final String LOG_PATTERN = "%s - - \"%s\" %d";
+    
+    private Logger LOG = Logger.getLogger(HttpServer.LOG_ACCESS);
     
     private SessionCache sessions;
 
@@ -62,7 +70,17 @@ public class HttpSessionService extends HttpService {
         
         response.addHeader(((HttpSessionContext)context).getSession().getHeader());
         
+        HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
+        InetAddress remoteAddress = connection.getRemoteAddress();
+        
         super.doService(request, response, context);
+        
+        LOG.info(String.format(
+            LOG_PATTERN,
+            remoteAddress.toString().substring(1),
+            request.getRequestLine().toString(),
+            response.getStatusLine().getStatusCode()
+        ));
     }
     
     // --------------------------------------------------------- private methods

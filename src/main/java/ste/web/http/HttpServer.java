@@ -60,6 +60,8 @@ import org.apache.http.protocol.HttpRequestHandlerMapper;
  */
 public class HttpServer {
     
+    public static final String LOG_ACCESS = "ste.https.access";
+    
     public static enum ClientAuthentication {
         NONE, CERTIFICATE
     };
@@ -170,6 +172,9 @@ public class HttpServer {
             socket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
             return socket;
         } catch (Exception x) {
+            /**
+             * TOODO: error handling
+             */
             x.printStackTrace();
             throw x;
         }
@@ -195,28 +200,22 @@ public class HttpServer {
                 try {
                     // Set up HTTP connection
                     Socket socket = this.serversocket.accept();
-                    System.out.println("Incoming connection from " + socket.getInetAddress());
                     HttpServerConnection conn = this.connFactory.createConnection(socket);
 
                     // Start worker thread
                     Thread t = new WorkerThread(server.getHttpService(), conn);
                     t.setDaemon(true);
                     t.start();
-                } catch (InterruptedIOException ex) {
-                    System.out.println("STOP listening... ");
-                    break;
-                } catch (IOException e) {
-                    System.out.println("STOP listening... ");
-                    System.err.println("I/O error initialising connection thread: "
-                            + e.getMessage());
-                    
+                } catch (IOException x) {
+                    /**
+                     * TODO: error handling
+                     */
                     break;
                 }
             }
         }
         
         public void interrupt() {
-            System.out.println("stopping " + this.serversocket);
             if (this.serversocket != null) {
                 try {
                     this.serversocket.close();
@@ -251,11 +250,13 @@ public class HttpServer {
                     this.http.handleRequest(this.conn);
                 }
             } catch (ConnectionClosedException ex) {
-                System.err.println("Client closed connection");
+                // TODO: error handling
+                // System.err.println("Client closed connection");
             } catch (IOException ex) {
-                System.err.println("I/O error: " + ex.getMessage());
+                // TODO: error handling
+                // System.err.println("I/O error: " + ex.getMessage());
             } catch (HttpException ex) {
-                System.err.println("Unrecoverable HTTP protocol violation: " + ex.getMessage());
+                // TODO: error handling
             } finally {
                 try {
                     this.conn.shutdown();
