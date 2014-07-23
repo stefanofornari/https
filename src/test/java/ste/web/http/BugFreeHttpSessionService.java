@@ -17,7 +17,6 @@
 package ste.web.http;
 
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.logging.Handler;
@@ -25,15 +24,18 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import org.apache.http.HttpConnectionMetrics;
+import org.apache.http.HttpException;
 import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpProcessorBuilder;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
@@ -57,7 +59,11 @@ public class BugFreeHttpSessionService {
     private HttpSessionService service = null;
     
     private static final BasicHttpRequest TEST_REQUEST1 = new BasicHttpRequest(
-        "get", "/something/something1.html", HttpVersion.HTTP_1_1
+        "GET", "/something/something1.html", HttpVersion.HTTP_1_1
+    );
+    
+    private static final BasicHttpRequest TEST_REQUEST2 = new BasicHttpRequest(
+        "POST", "/something?param1=one&param2=two", HttpVersion.HTTP_1_1
     );
     
     private static final BasicHttpResponse TEST_RESPONSE1 = new BasicHttpResponse(
@@ -84,6 +90,15 @@ public class BugFreeHttpSessionService {
                             .add(new ResponseContent())
                             .add(new ResponseConnControl()).build();
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
+        handlers.register("*", new HttpRequestHandler() {
+            @Override
+            public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
+                Integer status = (Integer)context.getAttribute("status");
+                if (status != null) {
+                    response.setStatusCode(status);
+                }
+            }
+        });
         
         service = new HttpSessionService(proc, handlers);
     }
@@ -93,7 +108,7 @@ public class BugFreeHttpSessionService {
         final ListLogHandler h = configure();
         
         HttpSessionContext context = new HttpSessionContext();
-        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection(127, 0, 0, 1));
+        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection());
         
         service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
         
@@ -105,7 +120,7 @@ public class BugFreeHttpSessionService {
         then(records).hasSize(1);
         then(records.get(0).getLevel()).isEqualTo(Level.INFO);
         then(records.get(0).getMessage()).has(
-            new MessageContition(TEST_REQUEST1, TEST_RESPONSE1, getConnection(127, 0, 0, 1))
+            new MessageCondition(TEST_REQUEST1, TEST_RESPONSE1, context)
         );
     }
     
@@ -115,7 +130,7 @@ public class BugFreeHttpSessionService {
         LOG.setLevel(Level.SEVERE);
         
         HttpSessionContext context = new HttpSessionContext();
-        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection(127, 0, 0, 1));
+        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection());
         service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
         
         then(h.getRecords()).isEmpty();
@@ -125,7 +140,7 @@ public class BugFreeHttpSessionService {
     public void logRemoteAddress() throws Exception {
         ListLogHandler h = configure();
         
-        TestConnection connection = getConnection(127, 0, 0, 1);
+        TestConnection connection = getConnection();
         
         HttpSessionContext context = new HttpSessionContext();
         context.setAttribute(HttpCoreContext.HTTP_CONNECTION, connection);
@@ -134,7 +149,7 @@ public class BugFreeHttpSessionService {
         
         List<LogRecord> records = h.getRecords();
         then(records.get(0).getMessage()).has(
-            new MessageContition(TEST_REQUEST1, TEST_RESPONSE1, connection)
+            new MessageCondition(TEST_REQUEST1, TEST_RESPONSE1, context)
         );
         records.clear();
         
@@ -143,8 +158,77 @@ public class BugFreeHttpSessionService {
         
         records = h.getRecords();
         then(records.get(0).getMessage()).has(
-            new MessageContition(TEST_REQUEST1, TEST_RESPONSE1, getConnection(10, 10, 127, 15))
+            new MessageCondition(TEST_REQUEST1, TEST_RESPONSE1, context)
         );
+    }
+    
+    @Test
+    public void logSessionId() throws Exception {
+        ListLogHandler h = configure();
+        
+        TestConnection connection = getConnection();
+        
+        final String[] TEST_SESSION_IDS = {"00001111", "22223333"};
+        
+        for (String sessionId: TEST_SESSION_IDS) {
+            HttpSessionContext context = new HttpSessionContext();
+            context.setAttribute(HttpCoreContext.HTTP_CONNECTION, connection);
+            
+            TEST_REQUEST1.addHeader("JSESSIONID", sessionId);
+
+            service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+            
+            List<LogRecord> records = h.getRecords();
+            then(records.get(0).getMessage()).has(
+                new MessageCondition(TEST_REQUEST1, TEST_RESPONSE1, context)
+            );
+            records.clear();
+        }
+    }
+    
+    @Test
+    public void logUri() throws Exception {
+        ListLogHandler h = configure();
+        
+        TestConnection connection = getConnection();
+        
+        final HttpRequest[] TEST_REQUESTS = {TEST_REQUEST1, TEST_REQUEST2};
+        
+        for (HttpRequest request: TEST_REQUESTS) {
+            HttpSessionContext context = new HttpSessionContext();
+            context.setAttribute(HttpCoreContext.HTTP_CONNECTION, connection);
+            
+            service.doService(request, TEST_RESPONSE1, context);
+            
+            List<LogRecord> records = h.getRecords();
+            then(records.get(0).getMessage()).has(
+                new MessageCondition(request, TEST_RESPONSE1, context)
+            );
+            records.clear();
+        }
+    }
+    
+    @Test
+    public void logStatus() throws Exception {
+        ListLogHandler h = configure();
+        
+        TestConnection connection = getConnection();
+        
+        final Integer[] TEST_STATUSES = {200, 404, 500};
+        
+        for (Integer status: TEST_STATUSES) {
+            HttpSessionContext context = new HttpSessionContext();
+            context.setAttribute(HttpCoreContext.HTTP_CONNECTION, connection);
+            context.setAttribute("status", status);
+            
+            service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+            
+            List<LogRecord> records = h.getRecords();
+            then(records.get(0).getMessage()).has(
+                new MessageCondition(TEST_REQUEST1, TEST_RESPONSE1, context)
+            );
+            records.clear();
+        }
     }
     
     // --------------------------------------------------------- private methods
@@ -164,26 +248,33 @@ public class BugFreeHttpSessionService {
         return connection;
     }
     
+    private TestConnection getConnection() throws Exception  {
+        return getConnection(127, 0, 0, 1);
+    }
+    
     // -------------------------------------------------------- MessageCondition
     
-    private class MessageContition extends Condition<String> {
+    private class MessageCondition extends Condition<String> {
         private HttpRequest request;
         private HttpResponse response;
-        private TestConnection connection;
+        private HttpSessionContext context;
         
-        public MessageContition(
-            HttpRequest request, HttpResponse response, TestConnection connection
+        public MessageCondition(
+            HttpRequest request, HttpResponse response, HttpSessionContext context
         ) {
             this.request    = request;
             this.response   = response;
-            this.connection = connection;
+            this.context = context;
         }
         
         @Override
         public boolean matches(String t) {
+            TestConnection connection = (TestConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
+            
             return String.format(
                 HttpSessionService.LOG_PATTERN,
                 connection.remoteAddress.toString().substring(1),
+                context.getSession().getId(),
                 request.getRequestLine().toString(),
                 response.getStatusLine().getStatusCode()
             ).equals(t);

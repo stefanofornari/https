@@ -18,6 +18,7 @@ package ste.web.http;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -66,8 +67,6 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
         LOG.addHandler(h);
         LOG.setLevel(Level.INFO);
         
-        final String TEST_LOG1 = "[0-9]+'.'[0-9]+'.'[0-9]+'.'[0-9]+";
-        
         server.start(); Thread.sleep(25);
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -75,11 +74,13 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
         // format: <remote address> <user> <session id> "<request> <protocol version>" <status>
         
         HttpResponse res = httpclient.execute(new HttpGet("https://localhost:8000/index.html"));
-        then(h.getMessages()).contains("127.0.0.1 - - \"GET /index.html HTTP/1.1\" 200");
+        String sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
         
         EntityUtils.consume(res.getEntity());
         httpclient.execute(new HttpGet("https://localhost:8000/index2.html"));
-        then(h.getMessages()).contains("127.0.0.1 - - \"GET /index2.html HTTP/1.1\" 404");
+        sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index2.html HTTP/1.1\" 404");
     }
     
     // ------------------------------------------------------- protected methods

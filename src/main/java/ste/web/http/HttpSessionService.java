@@ -39,7 +39,7 @@ import org.apache.http.protocol.HttpService;
  */
 public class HttpSessionService extends HttpService {
     
-    public static final String LOG_PATTERN = "%s - - \"%s\" %d";
+    public static final String LOG_PATTERN = "%s - %s \"%s\" %d";
     
     private Logger LOG = Logger.getLogger(HttpServer.LOG_ACCESS);
     
@@ -66,9 +66,9 @@ public class HttpSessionService extends HttpService {
     @Override
     protected void doService(HttpRequest request, HttpResponse response, HttpContext context) 
     throws HttpException, IOException {
-        selectSession(request, (HttpSessionContext)context);
+        HttpSession session = selectSession(request, (HttpSessionContext)context);
         
-        response.addHeader(((HttpSessionContext)context).getSession().getHeader());
+        response.addHeader(session.getHeader());
         
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
         InetAddress remoteAddress = connection.getRemoteAddress();
@@ -78,6 +78,7 @@ public class HttpSessionService extends HttpService {
         LOG.info(String.format(
             LOG_PATTERN,
             remoteAddress.toString().substring(1),
+            session.getId(),
             request.getRequestLine().toString(),
             response.getStatusLine().getStatusCode()
         ));
@@ -85,7 +86,7 @@ public class HttpSessionService extends HttpService {
     
     // --------------------------------------------------------- private methods
     
-    private void selectSession(HttpRequest request, HttpSessionContext context) {
+    private HttpSession selectSession(HttpRequest request, HttpSessionContext context) {
         String sessionId = null;
         for (Header h: request.getHeaders("Cookie")) {
             HttpCookie cookie = HttpCookie.parse(h.getValue()).get(0);
@@ -95,6 +96,9 @@ public class HttpSessionService extends HttpService {
             }
         }
         
-        context.setSession(sessions.get(sessionId));
+        HttpSession session = sessions.get(sessionId);
+        context.setSession(session);
+        
+        return session;
     }
 }
