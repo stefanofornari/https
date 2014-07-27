@@ -157,6 +157,7 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     public void sessionExpiration() throws Exception {
         System.setProperty("ste.http.session.lifetime", String.valueOf(250));
         
+        server.stop();
         server = createHttpServer();
         server.start(); Thread.sleep(25);
         

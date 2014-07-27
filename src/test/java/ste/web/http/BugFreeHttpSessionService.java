@@ -114,7 +114,7 @@ public class BugFreeHttpSessionService {
         service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
         
         /**
-         * TODO: a more generic spec may be required here. let's keep it simple 
+         * A more generic spec may be required here. let's keep it simple 
          * for now
          */
         List<LogRecord> records = h.getRecords();

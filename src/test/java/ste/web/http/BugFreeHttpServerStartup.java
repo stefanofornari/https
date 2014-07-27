@@ -131,21 +131,26 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
 
     @Test
     public void mssingClientAuthenticationWhenRequired() throws Exception {
-        SSLContext sc = SSLContext.getInstance("TLS");
-        sc.init(null, null, null);
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-        server = createHttpServerWithClientAuth();
-        server.start(); Thread.sleep(25);
-
-        URL url = new URL("https://localhost:8000/index.html");
+        HttpServer server2 = null;
         try {
-            ((HttpsURLConnection)url.openConnection()).getResponseCode();
-            fail("SSL handshake not failed!");
-        } catch (SSLHandshakeException x) {
-            //
-            // OK
-            //
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, null, null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+            server2 = createHttpServerWithClientAuth();
+            server2.start(); Thread.sleep(25);
+
+            URL url = new URL("https://localhost:8000/index.html");
+            try {
+                ((HttpsURLConnection)url.openConnection()).getResponseCode();
+                fail("SSL handshake not failed!");
+            } catch (SSLHandshakeException x) {
+                //
+                // OK
+                //
+            }
+        } finally {
+            server2.stop();
         }
     }
 }

@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -30,6 +31,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
@@ -57,19 +59,18 @@ import org.apache.http.protocol.HttpRequestHandlerMapper;
 /**
  * An HTTPS server
  *
- * TODO: certificate parameters shall be read from system properties TODO:
- * certificates shall be checked at startup and proper information provided in
- * case of issues.
  */
 public class HttpServer {
 
     public static final String PROPERTY_SSL_PASSWORD = "ste.http.ssl.password";
 
     public static final String LOG_ACCESS = "ste.https.access";
+    public static final String LOG_SERVER = "ste.https.server";
     public static final String CERT_ALIAS = "ste.https";
+    
+    final static Logger LOG = Logger.getLogger(LOG_SERVER);
 
     public static enum ClientAuthentication {
-
         NONE, CERTIFICATE
     };
 
@@ -126,17 +127,29 @@ public class HttpServer {
         }
     }
 
-    public void start() throws IOException {
-        //
-        // TODO: to be reviewed
-        //
-        requestListenerThread = new RequestListenerThread(this);
+    public void start() {
+        SSLServerSocket socket = null;
+        try {
+            socket = (SSLServerSocket) sf.createServerSocket(port);
+        } catch (IOException x) {
+            String msg = String.format(
+                "unable to start the server becasue it was not possible to bind port %d (%s)",
+                getPort(),
+                x.getMessage()
+            );
+            LOG.info(msg);
+            
+            return;
+        }
+        socket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
+                
+        requestListenerThread = new RequestListenerThread(this, socket);
         requestListenerThread.setDaemon(false);
         requestListenerThread.start();
         running = true;
     }
 
-    public void stop() throws IOException {
+    public void stop() {
         running = false;
         if (requestListenerThread != null) {
             requestListenerThread.interrupt();
@@ -170,23 +183,10 @@ public class HttpServer {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
             http = new HttpSessionService(httpproc, registry);
         }
-    }
-
-    public ServerSocket createServerSocket() throws IOException {
-        try {
-            SSLServerSocket socket = (SSLServerSocket) sf.createServerSocket(port);
-            socket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
-            return socket;
-        } catch (Exception x) {
-            /**
-             * TOODO: error handling
-             */
-            x.printStackTrace();
-            throw x;
-        }
-    }
+    }    
     
-        // --------------------------------------------------------- private methods
+    // --------------------------------------------------------- private methods
+    
     private SSLContext getSSLContext(final String home)
             throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, KeyManagementException {
         String sslPassword = System.getProperty(PROPERTY_SSL_PASSWORD);
@@ -248,43 +248,55 @@ public class HttpServer {
     
     static class RequestListenerThread extends Thread {
 
-        private final HttpConnectionFactory<DefaultBHttpServerConnection> connFactory;
-        private final ServerSocket serversocket;
+        private final HttpConnectionFactory<DefaultBHttpServerConnection> connectionFactory;
+        private final ServerSocket serverSocket;
         private final HttpServer server;
 
-        private Socket socket;
-
-        public RequestListenerThread(final HttpServer server) throws IOException {
-            this.connFactory = DefaultBHttpServerConnectionFactory.INSTANCE;
-            this.serversocket = server.createServerSocket();
+        public RequestListenerThread(final HttpServer server, final ServerSocket serverSocket) {
+            this.connectionFactory = DefaultBHttpServerConnectionFactory.INSTANCE;
+            this.serverSocket = serverSocket;
             this.server = server;
         }
 
         @Override
         public void run() {
             while (server.isRunning() && !Thread.interrupted()) {
+                Socket socket = null;
+                HttpServerConnection conn = null;
                 try {
-                    // Set up HTTP connection
-                    Socket socket = this.serversocket.accept();
-                    HttpServerConnection conn = this.connFactory.createConnection(socket);
-
-                    // Start worker thread
-                    Thread t = new WorkerThread(server.getHttpService(), conn);
-                    t.setDaemon(true);
-                    t.start();
+                    socket = this.serverSocket.accept();
                 } catch (IOException x) {
-                    /**
-                     * TODO: error handling
-                     */
+                    String msg = String.format(
+                        "stopping to listen on port %d (%s)",
+                        server.getPort(),
+                        x.getMessage()
+                    );
+                    LOG.info(msg);
                     break;
                 }
+                try {
+                    conn = this.connectionFactory.createConnection(socket);
+                } catch (IOException x) {
+                    String msg = String.format(
+                        "stopping to create connections (%s)",
+                        server.getPort(),
+                        x.getMessage()
+                    );
+                    LOG.info(msg);
+                    break;
+                }
+
+                // Start worker thread
+                Thread t = new WorkerThread(server.getHttpService(), conn);
+                t.setDaemon(true);
+                t.start();
             }
         }
 
         public void interrupt() {
-            if (this.serversocket != null) {
+            if (this.serverSocket != null) {
                 try {
-                    this.serversocket.close();
+                    this.serverSocket.close();
                 } catch (IOException x) {
                     //
                     // ignore
@@ -316,14 +328,12 @@ public class HttpServer {
                 while (!Thread.interrupted() && this.conn.isOpen()) {
                     this.http.handleRequest(this.conn);
                 }
-            } catch (ConnectionClosedException ex) {
-                // TODO: error handling
-                // System.err.println("Client closed connection");
-            } catch (IOException ex) {
-                // TODO: error handling
-                // System.err.println("I/O error: " + ex.getMessage());
-            } catch (HttpException ex) {
-                // TODO: error handling
+            } catch (ConnectionClosedException x) {
+                LOG.fine(String.format("connection closed by the client (%s)", x.getMessage()));
+            } catch (IOException x) {
+                LOG.fine(String.format("io error (%s)", x.getMessage()));
+            } catch (HttpException x) {
+                LOG.fine(String.format("http error (%s)", x.getMessage()));
             } finally {
                 try {
                     this.conn.shutdown();

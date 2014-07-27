@@ -58,6 +58,9 @@ public class HttpSessionService extends HttpService {
     
     public void handleRequest(final HttpServerConnection c)
     throws HttpException, IOException {
+        //
+        // TODO: server error handling (not related to IO or protocol
+        //
         super.handleRequest(c, new HttpSessionContext());
     }
     

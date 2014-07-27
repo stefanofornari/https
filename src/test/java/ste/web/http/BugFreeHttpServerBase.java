@@ -86,9 +86,7 @@ public abstract class BugFreeHttpServerBase {
 
     @After
     public void tearDown() throws IOException {
-        if (server.isRunning()) {
-            server.stop();
-        }
+        server.stop();
     }
     
     // ------------------------------------------------------- protected methods
