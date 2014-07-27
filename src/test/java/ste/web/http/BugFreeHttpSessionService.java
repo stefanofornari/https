@@ -50,7 +50,8 @@ import static ste.web.http.HttpServer.LOG_ACCESS;
 import ste.xtest.logging.ListLogHandler;
 
 /**
- *
+ * TODO: bug free code for selectSession (see cobertura)
+ * 
  * @author ste
  */
 public class BugFreeHttpSessionService {

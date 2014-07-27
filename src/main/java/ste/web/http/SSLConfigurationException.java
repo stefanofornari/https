@@ -15,23 +15,14 @@
  */
 package ste.web.http;
 
-import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.Test;
-
 /**
- * TODO: see cobertura report
- * 
+ *
  * @author ste
  */
-public class BugFreeSessionHeader {
+public class SSLConfigurationException extends Exception {
     
-    @Test
-    public void headerMustHaveSessionAndPath() {
-        SessionHeader h = new SessionHeader("12345");
-        then(h.getName()).isEqualTo("Set-Cookie");
-        then(h.toString()).isEqualTo("JSESSIONID=\"12345\";$Path=\"/\"");
-        
-        h = new SessionHeader("67890");
-        then(h.toString()).isEqualTo("JSESSIONID=\"67890\";$Path=\"/\"");
+    public SSLConfigurationException(String msg, Throwable cause) {
+        super(msg, cause);
     }
+    
 }

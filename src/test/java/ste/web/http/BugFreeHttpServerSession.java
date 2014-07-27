@@ -37,6 +37,9 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     @Rule
     public final ProvideSystemProperty SESSION_EXPIRATION_TIME
 	 = new ProvideSystemProperty("ste.http.session.lifetime", String.valueOf(15*60*1000));
+    @Rule
+    public final ProvideSystemProperty SSL_PASSWORD
+	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
 
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {

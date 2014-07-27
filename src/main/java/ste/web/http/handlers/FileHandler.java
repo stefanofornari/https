@@ -14,7 +14,7 @@
  * THIS SOFTWARE OR ITS DERIVATIVES.
  */
 
-package ste.web.http.hendlers;
+package ste.web.http.handlers;
 
 import java.io.File;
 import java.io.IOException;

@@ -29,7 +29,9 @@ import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
@@ -37,6 +39,10 @@ import ste.xtest.reflect.PrivateAccess;
  * @author ste
  */
 public class BugFreeHttpServerHandlers extends BugFreeHttpServerBase {
+    
+    @Rule
+    public final ProvideSystemProperty SSL_PASSWORD
+	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
     
     @Test
     public void setHandlersDefault() throws Exception {

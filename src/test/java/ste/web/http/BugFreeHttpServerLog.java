@@ -26,7 +26,9 @@ import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.HttpServer.LOG_ACCESS;
 import ste.xtest.logging.ListLogHandler;
 
@@ -39,6 +41,10 @@ import ste.xtest.logging.ListLogHandler;
  * @author ste
  */
 public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
+    
+    @Rule
+    public final ProvideSystemProperty SSL_PASSWORD
+	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
     
     private static final Logger LOG = Logger.getLogger(LOG_ACCESS);
     

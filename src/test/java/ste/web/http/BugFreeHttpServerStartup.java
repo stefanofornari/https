@@ -21,13 +21,19 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 
 /**
  *
  * @author ste
  */
 public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
+    
+    @Rule
+    public final ProvideSystemProperty SSL_PASSWORD
+	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
 
     @Test
     public void homeCanNotBeNullInConstructor() throws Exception {

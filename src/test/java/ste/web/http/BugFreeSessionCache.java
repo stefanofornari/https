@@ -23,7 +23,7 @@ import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
 
 /**
- *
+ * TODO: see cobertura report
  */
 public class BugFreeSessionCache {
     
