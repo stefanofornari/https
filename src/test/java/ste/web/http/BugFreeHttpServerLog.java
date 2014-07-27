@@ -139,7 +139,7 @@ public class BugFreeHttpServerLog {
         // let's wait up to 2 seconds
         //
         int i = 0;
-        while ((++i<50) && (h.size() == 0)) {
+        while ((++i<100) && (h.size() == 0)) {
             Thread.sleep(100);
         }
     }
