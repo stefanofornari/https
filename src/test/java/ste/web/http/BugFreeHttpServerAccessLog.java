@@ -18,7 +18,6 @@ package ste.web.http;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -40,7 +39,7 @@ import ste.xtest.logging.ListLogHandler;
  * </ul>
  * @author ste
  */
-public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
+public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
     
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
