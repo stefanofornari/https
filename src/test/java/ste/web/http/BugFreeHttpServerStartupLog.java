@@ -67,8 +67,7 @@ public class BugFreeHttpServerStartupLog {
         try {
             server1.start();
             server2.start();
-
-            Thread.sleep(100);  // let's give time the thread to finish
+            waitLogRecords(h);
         } finally {
             server1.stop();
             server2.stop();
@@ -88,6 +87,17 @@ public class BugFreeHttpServerStartupLog {
         HttpServer server = new HttpServer(root.getAbsolutePath(), ClientAuthentication.NONE, 8000, handlers);
 
         return server;
+    }
+    
+    private void waitLogRecords(final ListLogHandler h) throws InterruptedException {
+        //
+        // When running with multiple tests in parallel, it may take a while...
+        // let's wait up to 2 seconds
+        //
+        int i = 0;
+        while ((++i<50) && (h.size() == 0)) {
+            Thread.sleep(100);
+        }
     }
     
 }
