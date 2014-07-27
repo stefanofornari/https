@@ -114,7 +114,7 @@
         </plugins>
     </reporting>
     
-    scm>
+    <scm>
         <connection>scm:git:git@github.com:stefanofornari/https.git</connection>
         <url>https://github.com/stefanofornari/https</url>
         <tag>HEAD</tag>
