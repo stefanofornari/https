@@ -67,7 +67,6 @@ public class HttpServer {
 
     public static final String LOG_ACCESS = "ste.https.access";
     public static final String CERT_ALIAS = "ste.https";
-    //public static final String CERT_ALIAS = "localhost";
 
     public static enum ClientAuthentication {
 
