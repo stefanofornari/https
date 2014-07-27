@@ -113,6 +113,24 @@
             </plugin>
         </plugins>
     </reporting>
+    
+    scm>
+        <connection>scm:git:git@github.com:stefanofornari/https.git</connection>
+        <url>https://github.com/stefanofornari/https</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <distributionManagement>
+        <site>
+            <id>filesystem</id>
+            <url>file:./target/deploy/site</url>
+        </site>
+        <repository>
+            <id>filesystem</id>
+            <url>file:./target/deploy</url>
+        </repository>
+    </distributionManagement>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
