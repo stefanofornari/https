@@ -15,6 +15,7 @@
  */
 package ste.web.http;
 
+import java.util.Properties;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,9 +26,7 @@ import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.HttpServer.LOG_ACCESS;
 import ste.xtest.logging.ListLogHandler;
 
@@ -40,17 +39,11 @@ import ste.xtest.logging.ListLogHandler;
  * @author ste
  */
 public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
-    
-    @Rule
-    public final ProvideSystemProperty SSL_PASSWORD
-	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
-    
+        
     private static final Logger LOG = Logger.getLogger(LOG_ACCESS);
     
     @BeforeClass
     public static void setUpClass() throws Exception {
-        BugFreeHttpServerBase.setUpClass();
-        
         //
         // Logger.getLogger() returns the same instance to multiple threads
         // therefore each method must add its own handler; we clean up the 

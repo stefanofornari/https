@@ -53,7 +53,7 @@ public class FileHandler implements HttpRequestHandler  {
      */
     public FileHandler(final String docRoot, final String webContext) {
         if (docRoot == null) {
-            throw new IllegalArgumentException("diskRoot cannot be null");
+            throw new IllegalArgumentException("docRoot cannot be null");
         }
         this.docRoot = docRoot;
         this.webContext = webContext;

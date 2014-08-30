@@ -24,6 +24,7 @@ import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 
 /**
  *
@@ -33,68 +34,12 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
     
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
-	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
+	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
 
-    @Test
-    public void homeCanNotBeNullInConstructor() throws Exception {
-        try {
-            new HttpServer(null, HttpServer.ClientAuthentication.NONE, 8000, null);
-            fail("missing not illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("home can not be null");
-        }
-    }
-    
-    @Test
-    public void homeMustExistConstructor() throws Exception {
-        final String NOTEXISTING = "/notexisting";
-        final String EXISTING = "src/test/docroot/index.html";
-        try {
-            new HttpServer(NOTEXISTING, HttpServer.ClientAuthentication.NONE, 8000, null);
-            fail("missing not illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("must exist").contains(NOTEXISTING);
-        }
-        
-        try {
-            new HttpServer(EXISTING, HttpServer.ClientAuthentication.NONE, 8000, null);
-            fail("missing not illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("must be a directory").contains(EXISTING);
-        }
-    }
-    
-    @Test
-    public void portCanNotBeNegativeOrZeroInConstructor() throws Exception {
-        try {
-            new HttpServer(".", HttpServer.ClientAuthentication.NONE, 0, null);
-            fail("missing illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("port can not be <= 0");
-        }
-        
-        try {
-            new HttpServer(".", HttpServer.ClientAuthentication.NONE, -2, null);
-            fail("missing illegal parameter check");
-        } catch (IllegalArgumentException x) {
-            then(x.getMessage()).contains("port can not be <= 0");
-        }
-        
-    }
-
-    /**
-     * If not specified it should start listening on a default porto (i.e. 8080).
-     * Otherwise we can specify the HTTP port to use.
-     *
-     */
-    @Test
-    public void getPort() throws Throwable {
-        then(server.getPort()).isEqualTo(8000);
-    }
 
     @Test
     public void getHomePage() throws Exception {
-        server.start(); Thread.sleep(25);
+        server.start(); waitServerStartup();
 
         URL url = new URL("https://localhost:8000/index.html");
         then(((HttpsURLConnection)url.openConnection()).getResponseCode())
@@ -103,7 +48,7 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
 
     @Test
     public void getContent() throws Exception {
-        server.start(); Thread.sleep(25);
+        server.start(); waitServerStartup();
 
         URL url = new URL("https://localhost:8000/folder/notexisting.txt");
         then(((HttpsURLConnection)url.openConnection()).getResponseCode())
@@ -120,7 +65,7 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
     //
     @Test
     public void noHTTPServerHeader() throws Exception {
-        server.start(); Thread.sleep(25);
+        server.start(); waitServerStartup();
 
         URL url = new URL("https://localhost:8000/diskone/readme.txt");
 
@@ -137,8 +82,9 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
             sc.init(null, null, null);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
-            server2 = createHttpServerWithClientAuth();
-            server2.start(); Thread.sleep(25);
+            configuration.setProperty(Constants.CONFIG_HTTPS_AUTH, "cert");
+            server2 = new HttpServer(configuration);
+            server2.start(); waitServerStartup();
 
             URL url = new URL("https://localhost:8000/index.html");
             try {

@@ -16,14 +16,9 @@
 package ste.web.http;
 
 import java.io.IOException;
-import org.apache.http.Header;
-import org.apache.http.HeaderIterator;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.RequestLine;
-import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
@@ -32,6 +27,7 @@ import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
@@ -42,7 +38,7 @@ public class BugFreeHttpServerHandlers extends BugFreeHttpServerBase {
     
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
-	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
+	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
     
     @Test
     public void setHandlersDefault() throws Exception {

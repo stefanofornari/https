@@ -28,6 +28,8 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -36,7 +38,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ClearSystemProperties;
 import org.junit.rules.TemporaryFolder;
-import static ste.web.http.HttpServer.PROPERTY_SSL_PASSWORD;
+import static ste.web.http.BugFreeHttpServerBase.SSL_PASSWORD;
+import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
+import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
+import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateAlgorithmId;
@@ -60,7 +66,7 @@ public class BugFreeHttpServerSSL {
 
     @Rule
     public final ClearSystemProperties SYSTEM_SSL_PASSWORD
-            = new ClearSystemProperties(PROPERTY_SSL_PASSWORD);
+            = new ClearSystemProperties(CONFIG_SSL_PASSWORD);
 
     @Rule
     public final TemporaryFolder FOLDER = new TemporaryFolder();
@@ -80,9 +86,7 @@ public class BugFreeHttpServerSSL {
         String s = String.valueOf(System.currentTimeMillis());
         createKeyStore(String.valueOf(s).toCharArray(), HttpServer.CERT_ALIAS);
 
-        System.setProperty(PROPERTY_SSL_PASSWORD, s);
-
-        HttpServer server = createServer(HttpServer.ClientAuthentication.NONE);
+        HttpServer server = createServer(s);
         try {
             server.start();
             then(server.isRunning()).isTrue();
@@ -95,10 +99,8 @@ public class BugFreeHttpServerSSL {
         s = String.valueOf(System.currentTimeMillis());
         createKeyStore(String.valueOf(s).toCharArray(), HttpServer.CERT_ALIAS);
 
-        System.setProperty(PROPERTY_SSL_PASSWORD, s);
-
         try {
-            server = createServer(HttpServer.ClientAuthentication.NONE);
+            server = createServer(s);
 
             server.start();
             then(server.isRunning()).isTrue();
@@ -113,12 +115,10 @@ public class BugFreeHttpServerSSL {
     public void keyStorePasswordWrongPasswordKO() throws Exception {
         String s = String.valueOf(System.currentTimeMillis());
         createKeyStore(String.valueOf(s).toCharArray());
-        System.setProperty(PROPERTY_SSL_PASSWORD, "none");
-
         try {
-            createServer(HttpServer.ClientAuthentication.NONE);
+            createServer("none");
             fail("if SSL is not correctly setup server instantiation shall fail");
-        } catch (SSLConfigurationException x) {
+        } catch (ConfigurationException x) {
             then(x.getMessage()).contains("password").contains("incorrect");
         }
 
@@ -130,10 +130,10 @@ public class BugFreeHttpServerSSL {
         createKeyStore(String.valueOf(s).toCharArray());
 
         try {
-            createServer(HttpServer.ClientAuthentication.NONE);
+            createServer(null);
             fail("if SSL is not correctly setup server instantiation shall fail");
-        } catch (SSLConfigurationException x) {
-            then(x.getMessage()).contains("password not provided").contains(PROPERTY_SSL_PASSWORD);
+        } catch (ConfigurationException x) {
+            then(x.getMessage()).contains("password not provided").contains(CONFIG_SSL_PASSWORD);
         }
 
     }
@@ -141,11 +141,10 @@ public class BugFreeHttpServerSSL {
     @Test
     public void missingKeystoreKO() throws Exception {
         String s = String.valueOf(System.currentTimeMillis());
-        System.setProperty(PROPERTY_SSL_PASSWORD, s);
         try {
-            createServer(HttpServer.ClientAuthentication.NONE);
+            createServer(s);
             fail("if SSL is not correctly setup server instantiation shall fail");
-        } catch (SSLConfigurationException x) {
+        } catch (ConfigurationException x) {
             then(x.getMessage()).contains("No such file or directory").contains("etc/keystore");
         }
     }
@@ -155,12 +154,10 @@ public class BugFreeHttpServerSSL {
         String s = String.valueOf(System.currentTimeMillis());
         createKeyStore(String.valueOf(s).toCharArray());
 
-        System.setProperty(PROPERTY_SSL_PASSWORD, s);
-
         try {
-            createServer(HttpServer.ClientAuthentication.NONE);
+            createServer(s);
             fail("if SSL is not correctly setup server instantiation shall fail");
-        } catch (SSLConfigurationException x) {
+        } catch (ConfigurationException x) {
             then(x.getMessage())
                 .contains("missing server certificate")
                 .contains("etc/keystore")
@@ -169,11 +166,21 @@ public class BugFreeHttpServerSSL {
     }
 
     // --------------------------------------------------------- private methods
-    private HttpServer createServer(HttpServer.ClientAuthentication auth) throws Exception {
+    
+    private HttpServer createServer(String password) throws Exception {
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new FileHandler(root.getPath()));
+        
+        PropertiesConfiguration configuration= new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
+        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
+        if (password != null) {
+            configuration.setProperty(CONFIG_SSL_PASSWORD, password);
+        }
 
-        HttpServer server = new HttpServer(root.getAbsolutePath(), auth, 8000, handlers);
+        HttpServer server = new HttpServer(configuration);
+        server.setHandlers(handlers);
 
         return server;
     }

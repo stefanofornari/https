@@ -26,6 +26,7 @@ import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
+import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
@@ -35,6 +36,7 @@ import org.apache.http.protocol.HttpService;
 /**
  * 
  * TODO: HttpSessionServiceBuilder
+ * TODO: shall session handling be implemented with a HttpRequestInterceptor ?
  * 
  */
 public class HttpSessionService extends HttpService {
@@ -45,13 +47,16 @@ public class HttpSessionService extends HttpService {
     
     private SessionCache sessions;
 
-    public HttpSessionService(HttpProcessor processor, HttpRequestHandlerMapper handlerMapper) {
+    public HttpSessionService(
+        HttpProcessor processor, 
+        HttpRequestHandlerMapper handlerMapper,
+        long lifetime
+    ) {
         //
         // parameter validation is done in super()
         //
         super(processor, handlerMapper);
         
-        Long lifetime = Long.getLong("ste.http.session.lifetime", 15*60*1000);
         sessions = new SessionCache(lifetime);
     }
     
@@ -72,6 +77,7 @@ public class HttpSessionService extends HttpService {
         HttpSession session = selectSession(request, (HttpSessionContext)context);
         
         response.addHeader(session.getHeader());
+        response.setEntity(new BasicHttpEntity());
         
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
         InetAddress remoteAddress = connection.getRemoteAddress();

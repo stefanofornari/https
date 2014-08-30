@@ -54,8 +54,8 @@ class SessionCache extends HashMap<String, HttpSession> {
     public SessionCache(long lifetime, long purgetime) {
         super();
         
-        this.lifetime = (lifetime >= 0) ? lifetime : 0;
-        this.purgetime = (purgetime >= 0) ? purgetime : 0;
+        this.lifetime = (lifetime > 0) ? lifetime : 0;
+        this.purgetime = (purgetime > 0) ? purgetime : 0;
         this.lastPurge = 0;
         
         this.lastAccess = new HashMap<>();
@@ -106,7 +106,7 @@ class SessionCache extends HashMap<String, HttpSession> {
     }
     
     private void expireSession(final String id) {
-        if ((lifetime > 0) && (id != null)) {
+        if ((lifetime != 0) && (id != null)) {
             HttpSession session = (HttpSession)super.get(id);
             if (session != null) {
                 session.expire();

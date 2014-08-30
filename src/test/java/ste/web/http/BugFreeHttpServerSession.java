@@ -16,6 +16,7 @@
 package ste.web.http;
 
 import java.util.List;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
@@ -27,6 +28,11 @@ import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
+import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
+import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
+import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.PrintSessionHandler;
 
 /**
@@ -34,16 +40,9 @@ import ste.web.http.handlers.PrintSessionHandler;
  * @author ste
  */
 public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
-    @Rule
-    public final ProvideSystemProperty SESSION_EXPIRATION_TIME
-	 = new ProvideSystemProperty("ste.http.session.lifetime", String.valueOf(15*60*1000));
-    @Rule
-    public final ProvideSystemProperty SSL_PASSWORD
-	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
-
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {
-        
+        server = createHttpServer();
         server.start(); Thread.sleep(25);
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -97,7 +96,7 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     
     @Test
     public void getNewSession() throws Exception {
-        
+        server = createHttpServer();
         server.start(); Thread.sleep(25);
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -155,9 +154,6 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     
     @Test
     public void sessionExpiration() throws Exception {
-        System.setProperty("ste.http.session.lifetime", String.valueOf(250));
-        
-        server.stop();
         server = createHttpServer();
         server.start(); Thread.sleep(25);
         
@@ -190,8 +186,8 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
             .contains("{counter: 1}");
         
         //
-        // If we hit the same URL with the same client withing the expiration 
-        // time, the same session shall be returned
+        // If we hit the same URL with the same client after the expiration 
+        // time, the session id shall be reused but with new values
         //
         Thread.sleep(1000);
         response = httpclient.execute(httpget);
@@ -217,7 +213,14 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     // ------------------------------------------------------- protected methods
     
     protected HttpServer createHttpServer() throws Exception {
-        HttpServer s = super.createServer(HttpServer.ClientAuthentication.NONE);
+        PropertiesConfiguration c = new PropertiesConfiguration();
+        c.setProperty(CONFIG_HTTPS_ROOT, "src/test");
+        c.setProperty(CONFIG_HTTPS_PORT, "8000");
+        c.setProperty(CONFIG_HTTPS_AUTH, "none");
+        c.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
+        c.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        
+        HttpServer s = new HttpServer(c);
         
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new PrintSessionHandler());

@@ -15,23 +15,18 @@
  */
 package ste.web.http;
 
-import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.Test;
-
 /**
- * TODO: see cobertura report
- * 
+ *
  * @author ste
  */
-public class BugFreeSessionHeader {
+public class Constants {
+    public static final String CONFIG_SSL_PASSWORD  = "ste.https.ssl.password";
+    public static final String CONFIG_HTTPS_ROOT    = "ste.https.root";
+    public static final String CONFIG_HTTPS_PORT    = "ste.https.port";
+    public static final String CONFIG_HTTPS_AUTH    = "ste.https.auth";
+    public static final String CONFIG_HTTPS_SESSION_LIFETIME 
+                                                    = "ste.http.session.lifetime";
+    public static final String CONFIG_HTTPS_WEBROOT 
+                                                    = "ste.https.webroot";
     
-    @Test
-    public void headerMustHaveSessionAndPath() {
-        SessionHeader h = new SessionHeader("12345");
-        then(h.getName()).isEqualTo("Set-Cookie");
-        then(h.toString()).isEqualTo("JSESSIONID=\"12345\";$Path=\"/\"");
-        
-        h = new SessionHeader("67890");
-        then(h.toString()).isEqualTo("JSESSIONID=\"67890\";$Path=\"/\"");
-    }
 }

@@ -67,9 +67,8 @@ public class BugFreeHttpSessionService {
         "POST", "/something?param1=one&param2=two", HttpVersion.HTTP_1_1
     );
     
-    private static final BasicHttpResponse TEST_RESPONSE1 = new BasicHttpResponse(
-        HttpVersion.HTTP_1_1, 200, ""
-    );
+    private static final BasicHttpResponse TEST_RESPONSE1 = 
+        HttpUtils.getBasicResponse();
     
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -101,7 +100,7 @@ public class BugFreeHttpSessionService {
             }
         });
         
-        service = new HttpSessionService(proc, handlers);
+        service = new HttpSessionService(proc, handlers, 15*60*1000);
     }
         
     @Test

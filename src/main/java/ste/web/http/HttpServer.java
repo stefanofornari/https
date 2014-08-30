@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -31,6 +30,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -52,17 +52,20 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.X509KeyManager;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpConnectionFactory;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
+import static ste.web.http.Constants.*;
 
 /**
  * An HTTPS server
  *
  */
 public class HttpServer {
-
-    public static final String PROPERTY_SSL_PASSWORD = "ste.http.ssl.password";
 
     public static final String LOG_ACCESS = "ste.https.access";
     public static final String LOG_SERVER = "ste.https.server";
@@ -80,53 +83,79 @@ public class HttpServer {
     private boolean running;
     private RequestListenerThread requestListenerThread;
     private ClientAuthentication authentication;
+    private Configuration configuration;
 
     /**
-     * Creates a HTTPS server given the home, the SSL authentiaction, the port
-     * and the request handlers to use.
+     * Creates a HTTPS server given the a configuration object. The following 
+ configuration properties must be set: CONFIG_HTTPS_HOME, CONFIG_HTTPS_PORT,
+ CONFIG_SSL_PASSWORD; The following properties are optional: CONFIG_HTTPS_AUTH
+ (default to none), CONFIG_HTTPS_WEBROOT (default to webroot);
      *
-     * @param home the file system directory that should be considered the root
-     * of the server (it may be different than the current working directory -
-     * NOT NULL
-     * @param authentication the SSL authentication method to use
-     * @param port the port the serve shall listen to
-     * @param handlers the handlers to be used to process the requests; if null
-     * an empty handlers map will be used - MAY BE NULL
+     * @param configuration the configuration object - NOT NULL
      *
-     * @throws SSLConfigurationException if SSL is not properly configured
+     * @throws ConfigurationException if any of the mandatory parameter is missing
+     *         or invalid
      */
-    public HttpServer(
-            final String home,
-            final ClientAuthentication authentication,
-            final int port,
-            final HttpRequestHandlerMapper handlers
-    ) throws SSLConfigurationException {
-        if (home == null) {
-            throw new IllegalArgumentException("home can not be null");
+    public HttpServer(Configuration configuration) throws ConfigurationException {
+        if (configuration == null) {
+            throw new IllegalArgumentException("configuration can not be null");
         }
-        if (port <= 0) {
-            throw new IllegalArgumentException("port can not be <= 0");
+ 
+        String home = configuration.getString(CONFIG_HTTPS_ROOT);
+        if (StringUtils.isBlank(home)) {
+            throw new ConfigurationException(
+                "the server home directory is unset or blank; please specify a proper value for the property " + CONFIG_HTTPS_ROOT
+            );
         }
         File fileHome = new File(home);
         if (!fileHome.exists() || !fileHome.isDirectory()) {
-            throw new IllegalArgumentException(
+            throw new ConfigurationException (
                     String.format("the given home [%s] must exist and must be a directory", home)
             );
         }
-        this.port = port;
-        this.running = false;
-        this.requestListenerThread = null;
-        this.authentication = authentication;
-
-        setHandlers(handlers);
 
         try {
-            sf = getSSLContext(home).getServerSocketFactory();
-        } catch (Exception x) {
-            throw new SSLConfigurationException(x.getMessage(), x);
+            port = configuration.getInt(CONFIG_HTTPS_PORT);
+        } catch (NoSuchElementException x) {
+            throw new ConfigurationException(
+                "the server port is unset; please specify a proper value for the property " + CONFIG_HTTPS_PORT
+            );
+        } catch (ConversionException x) {
+            throw new ConfigurationException(
+                "the server port '" + 
+                configuration.getProperty(CONFIG_HTTPS_PORT) + 
+                "' is invalid; please specify a proper value for the property " + CONFIG_HTTPS_PORT
+            );
         }
+        if (port <= 0) {
+            throw new ConfigurationException(
+                "the server port '" +
+                configuration.getProperty(CONFIG_HTTPS_PORT) + 
+                "' is invalid; please specify a value between 1 and " 
+                + Integer.MAX_VALUE + 
+                " for the property " + CONFIG_HTTPS_PORT
+            );
+        }
+        
+        try {
+            String password = configuration.getString(CONFIG_SSL_PASSWORD);
+            sf = getSSLContext(home, password).getServerSocketFactory();
+        } catch (Exception x) {
+            throw new ConfigurationException(x.getMessage(), x);
+        }
+        
+        String auth = configuration.getString(CONFIG_HTTPS_AUTH);
+        authentication = "none".equalsIgnoreCase(auth)
+                       ? ClientAuthentication.NONE
+                       : ClientAuthentication.CERTIFICATE;
+        
+        this.running = false;
+        this.requestListenerThread = null;
+        this.configuration = configuration;
+        
+        setHandlers(null);
     }
-
+    
     public void start() {
         SSLServerSocket socket = null;
         try {
@@ -167,48 +196,52 @@ public class HttpServer {
     public int getPort() {
         return port;
     }
+    
+    public ClientAuthentication getAuthentication() {
+        return authentication;
+    }
 
     /**
      * @param handlers the new handlers; if null, no handlers will be set -
      * MAYBE NULL
      */
     public void setHandlers(HttpRequestHandlerMapper handlers) {
+        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
+        
         // Set up the HTTP protocol processor
         HttpProcessor httpproc = buildHttpProcessor();
 
         // Set up request handlers end HTTP service
         if (handlers != null) {
-            http = new HttpSessionService(httpproc, handlers);
+            http = new HttpSessionService(httpproc, handlers, sessionLifetime);
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            http = new HttpSessionService(httpproc, registry);
+            http = new HttpSessionService(httpproc, registry, sessionLifetime);
         }
     }    
     
     // --------------------------------------------------------- private methods
-    
-    private SSLContext getSSLContext(final String home)
+   
+    private SSLContext getSSLContext(final String home, final String password)
             throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, KeyManagementException {
-        String sslPassword = System.getProperty(PROPERTY_SSL_PASSWORD);
-
-        if (StringUtils.isBlank(sslPassword)) {
-            throw new UnrecoverableKeyException("ssl password not provided; set the system propoerty " + PROPERTY_SSL_PASSWORD);
+        if (StringUtils.isBlank(password)) {
+            throw new UnrecoverableKeyException("ssl password not provided; set the system propoerty " + CONFIG_SSL_PASSWORD);
         }
 
         //
         // SSL Setup
         //
-        char[] password = sslPassword.toCharArray();
+        char[] sslPassword = password.toCharArray();
 
         //
         // TODO: handle the case the client does not send the certificate
         //
         String keystoreFile = home + "/etc/keystore";
         KeyStore keystore = KeyStore.getInstance("jks");
-        keystore.load(new FileInputStream(keystoreFile), password);
+        keystore.load(new FileInputStream(keystoreFile), sslPassword);
         
         //
-        // check that tehre is a certificate with alias https; this is the 
+        // check that there is a certificate with alias ste.https; this is the 
         // server certificate. If such certificate is not available provide 
         // proper message and description.
         //
@@ -223,7 +256,7 @@ public class HttpServer {
         KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
                 KeyManagerFactory.getDefaultAlgorithm()
         );
-        kmfactory.init(keystore, password);
+        kmfactory.init(keystore, sslPassword);
         X509KeyManager x509KeyManager = 
             (X509KeyManager)kmfactory.getKeyManagers()[0];
         

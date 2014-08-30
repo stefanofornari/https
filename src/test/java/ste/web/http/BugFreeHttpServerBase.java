@@ -23,6 +23,8 @@ import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.junit.After;
 import org.junit.Before;
@@ -33,11 +35,22 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
+import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
+import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
+import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 
 /**
  * @author ste
  */
 public abstract class BugFreeHttpServerBase {
+    
+    protected static final String SSL_PASSWORD = "20150630";
+    protected static final String HOME = "src/test";
+    protected static final String DOCROOT = "src/test/docroot";
+    protected static final String PORT = "8000";
 
     @Rule
     public final TestRule PRINT_TEST_NAME = new TestWatcher() {
@@ -47,74 +60,52 @@ public abstract class BugFreeHttpServerBase {
     };
     
     @Rule
-    public final TemporaryFolder TESTDIR = new TemporaryFolder();
-    
-    
-    @Rule
-    public final ProvideSystemProperty TRUST_STORE
+    public final ProvideSystemProperty TRUST_STORE_PROPERTY
 	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
 
     @Rule
-    public final ProvideSystemProperty TRUST_STORE_PWD
-	 = new ProvideSystemProperty("javax.net.ssl.trustStorePassword", "20150630");
-
-    private static SSLContext clientCertificateContext;
+    public final ProvideSystemProperty TRUST_STORE_PWD_PROPERTY
+	 = new ProvideSystemProperty("javax.net.ssl.trustStorePassword", SSL_PASSWORD);
     
+    //@Rule public final ProvideSystemProperty SSL_DEBUG_PROPERTY = new ProvideSystemProperty("javax.net.debug", "ssl");
+
+    protected Configuration configuration = null;
     protected HttpServer server = null;
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        Properties props = System.getProperties();
-        props.put("javax.net.ssl.trustStoreType", "jks");
-        props.put("javax.net.ssl.trustStore", "src/test/etc/castore");
-        props.put("javax.net.ssl.trustStorePassword", "20150630");
-
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        FileInputStream fis = new FileInputStream("src/test/etc/mariorossi.p12");
-        ks.load(fis, "20150630".toCharArray());
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, "20150630".toCharArray());
-        clientCertificateContext = SSLContext.getInstance("TLS");
-        clientCertificateContext.init(kmf.getKeyManagers(), null, null);
-    }
 
     @Before
     public void setUp() throws Exception  {
-        HttpsURLConnection.setDefaultSSLSocketFactory(clientCertificateContext.getSocketFactory());
-        server = createHttpServer();
-    }
-
-    @After
-    public void tearDown() throws IOException {
-        server.stop();
-    }
-    
-    // ------------------------------------------------------- protected methods
-    
-    protected HttpServer createHttpServer() throws Exception {
-        return createServer(HttpServer.ClientAuthentication.NONE);
-    }
-    
-    protected HttpServer createHttpServerWithClientAuth() throws Exception {
-        return createServer(HttpServer.ClientAuthentication.CERTIFICATE);
-    }
-    
-    // --------------------------------------------------------- private methods
-    
-    HttpServer createServer(HttpServer.ClientAuthentication auth) throws Exception {
-        final String HOME = "src/test";
-        final String DOCROOT = "src/test/docroot";
+        configuration = new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
+        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
+        configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
+        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
         
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new FileHandler(DOCROOT));
         
-        HttpServer server = new HttpServer(
-            HOME,
-            auth, 
-            8000, 
-            handlers
-        );
-        
-        return server;
+        server = new HttpServer(configuration);
+        server.setHandlers(handlers);
     }
+
+    @After
+    public void tearDown() throws IOException {
+        if (server != null) {
+            server.stop();
+        }
+    }
+    
+    // ------------------------------------------------------- protected methods
+    
+    protected void waitServerStartup() {
+        try {
+            Thread.sleep(25);
+        } catch (InterruptedException x) {
+            //
+            // what can I do here??? :)
+            //
+        }
+    }
+
 }

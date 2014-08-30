@@ -19,12 +19,18 @@ import java.io.File;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
+import static ste.web.http.BugFreeHttpServerBase.SSL_PASSWORD;
+import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
+import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
+import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.HttpServer.ClientAuthentication;
 import ste.web.http.handlers.FileHandler;
 import ste.xtest.logging.ListLogHandler;
@@ -41,8 +47,8 @@ public class BugFreeHttpServerStartupLog {
     private static final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
         
     @Rule
-    public final ProvideSystemProperty SSL_PASSWORD
-	 = new ProvideSystemProperty("ste.http.ssl.password", "20150630");
+    public final ProvideSystemProperty SSL_PASSWORD_PROPERTY
+	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
     
     @Before
     public void setUp() throws Exception {   
@@ -81,10 +87,19 @@ public class BugFreeHttpServerStartupLog {
     
     private HttpServer createServer() throws Exception {
         File root = new File("src/test");
+        
+        PropertiesConfiguration configuration= new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
+        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        
+        HttpServer s = new HttpServer(configuration);
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new FileHandler(root.getPath()));
 
-        HttpServer server = new HttpServer(root.getAbsolutePath(), ClientAuthentication.NONE, 8000, handlers);
+        HttpServer server = new HttpServer(configuration);
+        server.setHandlers(handlers);
 
         return server;
     }
