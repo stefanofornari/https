@@ -88,6 +88,9 @@
                     </includes>
                 </configuration>
             </plugin>
+            <!--
+               Using release plugin 2.5 to avoid fix issue https://jira.codehaus.org/browse/MRELEASE-812
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
