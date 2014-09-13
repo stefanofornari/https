@@ -55,7 +55,6 @@ import javax.net.ssl.X509KeyManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpConnectionFactory;
 import org.apache.http.protocol.HttpRequestHandlerMapper;

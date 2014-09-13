@@ -45,7 +45,7 @@ public class FileHandler implements HttpRequestHandler  {
      * Creates a new FileHandler that reads files located under docRoot, which
      * is taken as parent of the URI.
      * 
-     * @param docRoot the root directory for source images - NOT NULL
+     * @param docRoot the root directory for files - NOT NULL
      * @param webContext the base uri for previews - NOT BLANK
      *
      * @throws IllegalArgumentException if any of the parameter has an illegal
