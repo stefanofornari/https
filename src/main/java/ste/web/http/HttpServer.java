@@ -45,8 +45,6 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
-import org.apache.http.impl.DefaultBHttpServerConnection;
-import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -56,7 +54,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpConnectionFactory;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import static ste.web.http.Constants.*;
 
@@ -279,13 +276,10 @@ public class HttpServer {
     // --------------------------------------------------- RequestListenerThread
     
     static class RequestListenerThread extends Thread {
-
-        private final HttpConnectionFactory<DefaultBHttpServerConnection> connectionFactory;
         private final ServerSocket serverSocket;
         private final HttpServer server;
 
         public RequestListenerThread(final HttpServer server, final ServerSocket serverSocket) {
-            this.connectionFactory = DefaultBHttpServerConnectionFactory.INSTANCE;
             this.serverSocket = serverSocket;
             this.server = server;
         }
@@ -307,7 +301,7 @@ public class HttpServer {
                     break;
                 }
                 try {
-                    conn = this.connectionFactory.createConnection(socket);
+                    conn = BasicHttpConnectionFactory.INSTANCE.createConnection(socket);
                 } catch (IOException x) {
                     String msg = String.format(
                         "stopping to create connections (%s)",
