@@ -29,6 +29,7 @@ import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
+import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.HttpContext;
@@ -102,6 +103,10 @@ public class BugFreeHttpSessionService {
         
         service = new HttpSessionService(proc, handlers, 15*60*1000);
     }
+    
+    //
+    // Logging
+    //
         
     @Test
     public void logAtINFOLevel() throws Exception {
@@ -229,6 +234,21 @@ public class BugFreeHttpSessionService {
             );
             records.clear();
         }
+    }
+    
+    //
+    // other functionalities
+    //
+    @Test
+    public void basicEntityShallHaveEmptyContentByDefault() throws Exception {
+        HttpSessionContext context = new HttpSessionContext();
+        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection());
+        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+        
+        BasicHttpEntity body = (BasicHttpEntity)TEST_RESPONSE1.getEntity();
+        then(body).isNotNull();
+        then(body.getContentLength()).isZero();
+        then(body.getContent()).isNotNull();
     }
     
     // --------------------------------------------------------- private methods

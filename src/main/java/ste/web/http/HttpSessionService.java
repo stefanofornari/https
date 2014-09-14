@@ -16,6 +16,7 @@
 
 package ste.web.http;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpCookie;
 import java.net.InetAddress;
@@ -77,7 +78,7 @@ public class HttpSessionService extends HttpService {
         HttpSession session = selectSession(request, (HttpSessionContext)context);
         
         response.addHeader(session.getHeader());
-        response.setEntity(new BasicHttpEntity());
+        response.setEntity(createEmptyEntity());
         
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
         InetAddress remoteAddress = connection.getRemoteAddress();
@@ -109,5 +110,13 @@ public class HttpSessionService extends HttpService {
         context.setSession(session);
         
         return session;
+    }
+    
+    private BasicHttpEntity createEmptyEntity() {
+        BasicHttpEntity e = new BasicHttpEntity();
+        e.setContentLength(0);
+        e.setContent(new ByteArrayInputStream(new byte[0]));
+        
+        return e;
     }
 }
