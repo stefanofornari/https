@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ste</groupId>
     <artifactId>https</artifactId>
-    <version>0.0.6-SNAPSHOT</version>
+    <version>0.0.6</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.4.1-SNAPSHOT</version>
+            <version>1.4.1</version>
         </dependency>
     </dependencies>
     
@@ -144,7 +144,7 @@
     <scm>
         <connection>scm:git:git@github.com:stefanofornari/https.git</connection>
         <url>https://github.com/stefanofornari/https</url>
-        <tag>HEAD</tag>
+        <tag>https-0.0.6</tag>
     </scm>
 
     <distributionManagement>
