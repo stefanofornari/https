@@ -75,7 +75,6 @@ public class FileHandler implements HttpRequestHandler  {
         if (StringUtils.isNotBlank(webContext) && target.startsWith(webContext)) {
             target = target.substring(webContext.length());
         }
-        System.out.println("handling " + target + " from " + docRoot + '(' + webContext + ")");
 
         if (request instanceof HttpEntityEnclosingRequest) {
             HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
@@ -107,7 +106,6 @@ public class FileHandler implements HttpRequestHandler  {
             response.setStatusCode(HttpStatus.SC_OK);
             FileEntity body = new FileEntity(file, ContentType.create("text/html", (Charset) null));
             response.setEntity(body);
-            System.out.println("Serving file " + file.getPath());
         }
     }
 
