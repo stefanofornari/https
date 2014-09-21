@@ -16,22 +16,14 @@
 package ste.web.http;
 
 import ste.web.http.handlers.FileHandler;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.KeyStore;
-import java.util.Properties;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
