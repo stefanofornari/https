@@ -120,6 +120,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         lastAccess.put(id, System.currentTimeMillis());
     }
     
+    @SuppressWarnings("unchecked")
     private void purge() {
         if (lifetime == 0) {
             return;
