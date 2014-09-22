@@ -186,6 +186,9 @@ public class BugFreeHttpServerSSL {
     }
 
     private void createKeyStore(char[] password, String alias) throws Exception {
+        //
+        // TODO: use Bouncy Castle ?
+        //
         FileOutputStream os = new FileOutputStream(root.getAbsolutePath() + "/etc/keystore");
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, password);
