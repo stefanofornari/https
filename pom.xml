@@ -60,15 +60,15 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>ste.test</groupId>
-            <artifactId>xtest</artifactId>
-            <version>1.6.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.4.4</version>
+            <version>1.4.5</version>
+        </dependency>
+        <dependency>
+            <groupId>ste.test</groupId>
+            <artifactId>xtest</artifactId>
+            <version>1.6.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     
