@@ -52,16 +52,12 @@ public class PrintSessionHandler implements HttpRequestHandler  {
         long counter = (counterAttribute == null) 
                      ? 1 : counterAttribute+1;
         
-        System.out.println("request: " + request);
-        
         response.setStatusCode(HttpStatus.SC_OK);
         
         StringBuilder body = new StringBuilder();
         body.append("{id: ").append(session.getId()).append("}").append('\n')
             .append("{counter: ").append(counter).append("}").append('\n');
         response.setEntity(new StringEntity(body.toString()));
-        
-        System.out.println("counter : " + counter);
         session.setAttribute(ATTRIBUTE_COUNTER, new Long(counter));
     }
 }
