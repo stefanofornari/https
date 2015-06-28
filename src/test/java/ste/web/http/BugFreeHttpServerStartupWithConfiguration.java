@@ -134,15 +134,18 @@ public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServer
         configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         
-        then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.CERTIFICATE);
+        then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.BASIC);
         
         for (String BLANK: BLANKS) {
             configuration.setProperty(CONFIG_HTTPS_AUTH, BLANK);
-            then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.CERTIFICATE);
+            then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.BASIC);
         }
         
         configuration.setProperty(CONFIG_HTTPS_AUTH, "something");
-        then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.CERTIFICATE);
+        then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.BASIC);
+        
+        configuration.setProperty(CONFIG_HTTPS_AUTH, "basic");
+        then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.BASIC);
         
         configuration.setProperty(CONFIG_HTTPS_AUTH, "cert");
         then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.CERTIFICATE);

@@ -1,0 +1,6 @@
+20150628
+- switched to apache.commons.lang3
+- session's principal injected from the AUTHENTICATION header
+
+20150609
+- added basic authentication

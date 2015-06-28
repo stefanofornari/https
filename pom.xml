@@ -13,12 +13,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
@@ -54,21 +48,32 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.4.5</version>
+            <version>1.5.2-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
         </dependency>
         <dependency>
             <groupId>ste.test</groupId>
             <artifactId>xtest</artifactId>
-            <version>1.6.3</version>
+            <version>1.9.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>1.10</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
     

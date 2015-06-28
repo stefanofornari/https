@@ -53,7 +53,7 @@ import javax.net.ssl.X509KeyManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import static ste.web.http.Constants.*;
 
@@ -70,7 +70,7 @@ public class HttpServer {
     final static Logger LOG = Logger.getLogger(LOG_SERVER);
 
     public static enum ClientAuthentication {
-        NONE, CERTIFICATE
+        BASIC, NONE, CERTIFICATE
     };
 
     private SSLServerSocketFactory sf;
@@ -141,9 +141,13 @@ public class HttpServer {
         }
         
         String auth = configuration.getString(CONFIG_HTTPS_AUTH);
-        authentication = "none".equalsIgnoreCase(auth)
-                       ? ClientAuthentication.NONE
-                       : ClientAuthentication.CERTIFICATE;
+        authentication = ClientAuthentication.BASIC;
+        
+        if ("none".equalsIgnoreCase(auth)) {
+            authentication = ClientAuthentication.NONE;
+        } else if ("cert".equalsIgnoreCase(auth)) {
+            authentication = ClientAuthentication.CERTIFICATE;
+        }
         
         this.running = false;
         this.requestListenerThread = null;

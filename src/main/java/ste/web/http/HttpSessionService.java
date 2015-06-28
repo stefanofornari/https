@@ -18,11 +18,15 @@ package ste.web.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
 import java.net.InetAddress;
+import java.util.Base64;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -33,6 +37,7 @@ import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.HttpService;
+import ste.web.acl.User;
 
 /**
  * 
@@ -85,6 +90,8 @@ public class HttpSessionService extends HttpService {
         
         super.doService(request, response, context);
         
+        setPrincipal(request, (HttpSessionContext)context);
+        
         LOG.info(String.format(
             LOG_PATTERN,
             remoteAddress.toString().substring(1),
@@ -112,11 +119,31 @@ public class HttpSessionService extends HttpService {
         return session;
     }
     
+    private void setPrincipal(HttpRequest request, HttpSessionContext context) {
+        Header h = request.getFirstHeader(HttpHeaders.AUTHORIZATION);
+        if (h != null) {
+            context.setPrincipal(userFromBasicHeader(h));
+        }
+    }
+    
     private BasicHttpEntity createEmptyEntity() {
         BasicHttpEntity e = new BasicHttpEntity();
         e.setContentLength(0);
         e.setContent(new ByteArrayInputStream(new byte[0]));
         
         return e;
+    }
+    
+    private User userFromBasicHeader(final Header authorization) {
+        Pair<String, String> cred = HttpUtils.parseBasicAuth(authorization);
+        
+        User user = null;
+        
+        if (cred != null) {
+            user = new User(cred.getLeft());
+            user.setSecret(cred.getRight());
+        }
+        
+        return user;
     }
 }

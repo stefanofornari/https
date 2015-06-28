@@ -27,8 +27,6 @@ import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
@@ -45,7 +43,7 @@ import ste.web.http.handlers.FileHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerClientAuthentication extends BugFreeHttpServerBase {
+public class BugFreeHttpServerClientAuthenticationCert extends BugFreeHttpServerBase {
     
     private URL url = null;
     
