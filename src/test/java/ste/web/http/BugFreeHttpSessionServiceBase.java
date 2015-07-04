@@ -18,6 +18,7 @@ package ste.web.http;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.Principal;
 import java.util.logging.Logger;
 import org.apache.http.HttpConnectionMetrics;
 import org.apache.http.HttpException;
@@ -68,15 +69,7 @@ public class BugFreeHttpSessionServiceBase {
                             .add(new ResponseContent())
                             .add(new ResponseConnControl()).build();
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new HttpRequestHandler() {
-            @Override
-            public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
-                Integer status = (Integer)context.getAttribute("status");
-                if (status != null) {
-                    response.setStatusCode(status);
-                }
-            }
-        });
+        handlers.register("*", new TestHandler() );
         
         service = new HttpSessionService(proc, handlers, 15*60*1000);
     }
@@ -158,5 +151,21 @@ public class BugFreeHttpSessionServiceBase {
         }
     }
     
-    
+
+    protected class TestHandler implements HttpRequestHandler {
+        private Principal principal;
+
+        @Override
+        public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
+            Integer status = (Integer)context.getAttribute("status");
+            if (status != null) {
+                response.setStatusCode(status);
+            }
+            principal = ((HttpSessionContext)context).getPrincipal();
+        }
+        
+        public Principal getPrincipal() {
+            return principal;
+        }
+    }
 }

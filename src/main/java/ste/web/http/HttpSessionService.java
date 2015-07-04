@@ -18,10 +18,8 @@ package ste.web.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
 import java.net.InetAddress;
-import java.util.Base64;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.Header;
@@ -37,6 +35,7 @@ import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.HttpService;
+import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import ste.web.acl.User;
 
 /**
@@ -74,7 +73,7 @@ public class HttpSessionService extends HttpService {
         //
         super.handleRequest(c, new HttpSessionContext());
     }
-    
+        
     // ------------------------------------------------------- protected methods
     
     @Override
@@ -88,9 +87,9 @@ public class HttpSessionService extends HttpService {
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
         InetAddress remoteAddress = connection.getRemoteAddress();
         
-        super.doService(request, response, context);
-        
         setPrincipal(request, (HttpSessionContext)context);
+        
+        super.doService(request, response, context);
         
         LOG.info(String.format(
             LOG_PATTERN,

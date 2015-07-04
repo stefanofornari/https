@@ -16,13 +16,16 @@
 
 package ste.web.http;
 
+import java.security.Principal;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Test;
 import ste.web.acl.User;
+import ste.xtest.reflect.PrivateAccess;
 
 /**
  * TODO: bug free code for selectSession (see cobertura)
@@ -86,5 +89,25 @@ public class BugFreeHttpSessionService extends BugFreeHttpSessionServiceBase {
         //
         // for other comination of username and password see HttpUtils
         //
+    }
+    
+    @Test
+    public void provide_principal_to_handlers() throws Exception {
+        HttpSessionContext context = new HttpSessionContext();
+        context.setAttribute(HttpCoreContext.HTTP_CONNECTION, getConnection());
+        
+        // abcd:1234
+        TEST_REQUEST1.setHeader(HttpHeaders.AUTHORIZATION, "Basic YWJjZDoxMjM0");
+        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+        
+        UriHttpRequestHandlerMapper mapper 
+            = (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(service, "handlerMapper");
+        
+        TestHandler h = 
+            (TestHandler)mapper.lookup(HttpUtils.getSimpleGet("/index.html"));
+        
+        Principal p = h.getPrincipal();
+        then(p).isNotNull();
+        then(p.getName()).isEqualTo("abcd");
     }
 }
