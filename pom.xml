@@ -50,7 +50,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.5.2-SNAPSHOT</version>
+            <version>1.6.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
