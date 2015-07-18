@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ste</groupId>
     <artifactId>https</artifactId>
-    <version>0.0.10-SNAPSHOT</version>
+    <version>0.0.10</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -160,7 +160,7 @@
     <scm>
         <connection>scm:git:git@github.com:stefanofornari/https.git</connection>
         <url>https://github.com/stefanofornari/https</url>
-        <tag>https-0.0.7</tag>
+        <tag>https-0.0.10</tag>
     </scm>
 
     <distributionManagement>
