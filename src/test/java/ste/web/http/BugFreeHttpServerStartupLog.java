@@ -39,14 +39,12 @@ import ste.xtest.logging.ListLogHandler;
  *
  * @author ste
  * 
- * TODO: do the same with web
  */
 public class BugFreeHttpServerStartupLog {
-    
     private static final String MSG_PORT_BINDING_FAILURE =
-        "unable to start the ssl server becasue it was not possible to bind port 8000 (Address already in use)";
+        "unable to start the server because it was not possible to bind port %d (address already in use)";
     
-    private static final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
+    private final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
         
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD_PROPERTY
@@ -62,15 +60,16 @@ public class BugFreeHttpServerStartupLog {
         for (Handler h: LOG.getHandlers()) {
             LOG.removeHandler(h);
         }
+        LOG.setLevel(Level.INFO);
     }
 
     @Test
-    public void logAtInfoAddressAlreadyBound() throws Exception {
+    public void log_at_info_address_already_bound_ssl() throws Exception {
         final ListLogHandler h = new ListLogHandler();
         LOG.addHandler(h);
-        LOG.setLevel(Level.INFO);
 
-        HttpServer server1 = createServer(), server2 = createServer();
+        HttpServer server1 = createServer(8400, 7000), 
+                   server2 = createServer(8400, 7000);
         
         try {
             server1.start();
@@ -83,18 +82,44 @@ public class BugFreeHttpServerStartupLog {
         }
         
         then(server2.isRunning()).isFalse();
-        then(h.getMessages()).contains(MSG_PORT_BINDING_FAILURE);
+        then(h.getMessages()).contains(
+            String.format(MSG_PORT_BINDING_FAILURE, 8400)
+        );
+    }
+    
+    @Test
+    public void log_at_info_address_already_bound_web() throws Exception {
+        final ListLogHandler h = new ListLogHandler();
+        LOG.addHandler(h);
+        
+        HttpServer server1 = createServer(8400, 8800), 
+                   server2 = createServer(8500, 8800);
+        
+        try {
+            server1.start();
+            server2.start();
+            waitLogRecords(h);
+        } finally {
+            server1.stop(); 
+            server2.stop();
+            Thread.sleep(100);
+        }
+        
+        then(server2.isRunning()).isFalse();
+        then(h.getMessages()).contains(
+            String.format(MSG_PORT_BINDING_FAILURE, 8800)
+        );
     }
     
     // --------------------------------------------------------- private methods
     
-    private HttpServer createServer() throws Exception {
+    private HttpServer createServer(final int sslPort, final int webPort) throws Exception {
         File root = new File("src/test");
         
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
-        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "7000");
+        configuration.setProperty(CONFIG_HTTPS_PORT, String.valueOf(sslPort));
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, String.valueOf(webPort));
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         

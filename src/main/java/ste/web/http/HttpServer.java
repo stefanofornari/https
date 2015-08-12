@@ -148,9 +148,9 @@ public class HttpServer {
             if (LOG.isLoggable(Level.INFO)) {
                 LOG.info(
                     String.format(
-                        "unable to start the ssl server becasue it was not possible to bind port %d (%s)",
+                        "unable to start the server because it was not possible to bind port %d (%s)",
                         port,
-                        x.getMessage()
+                        x.getMessage().toLowerCase()
                     )
                 );
             }
@@ -165,9 +165,9 @@ public class HttpServer {
             if (LOG.isLoggable(Level.INFO)) {
                 LOG.info(
                     String.format(
-                        "unable to start the web server becasue it was not possible to bind port %d (%s)",
+                        "unable to start the server because it was not possible to bind port %d (%s)",
                         webPort,
-                        x.getMessage()
+                        x.getMessage().toLowerCase()
                     )
                 );
             }
