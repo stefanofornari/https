@@ -18,13 +18,10 @@ package ste.web.http;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.http.HttpConnectionFactory;
-import org.apache.http.impl.DefaultBHttpServerConnection;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,20 +32,25 @@ import ste.xtest.logging.ListLogHandler;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
- * TODO: cover web case too
  * 
  * @author ste
  */
 public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
     
-    private static final String MSG_SOCKET_ACCEPT_FAILURE =
+    private static final String MSG_SOCKET_ACCEPT_FAILURE_SSL =
         "stopping to listen on port " + PORT + " (Socket closed)";
-    private static final String MSG_SOCKET_CREATE_CONNECTION =
-        "stopping to create connections (Connection error)";
+    private static final String MSG_SOCKET_ACCEPT_FAILURE_WEB =
+        "stopping to listen on port " + WEBPORT + " (Socket is closed)";
+    private static final String MSG_SOCKET_CREATE_CONNECTION_SSL =
+        "stopping to create connections on port " + PORT + " (connection error: fake HttpConnectionFactory!!!)";
+    private static final String MSG_SOCKET_CREATE_CONNECTION_WEB =
+        "stopping to create connections on port " + WEBPORT + " (connection error: fake HttpConnectionFactory!!!)";
     
     private static final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
     
     private BasicHttpConnectionFactory factory = null;
+    
+    private ListLogHandler h = null;
         
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
@@ -66,58 +68,90 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
         for (Handler h: LOG.getHandlers()) {
             LOG.removeHandler(h);
         }
+        
+        h = new ListLogHandler();
+        LOG.addHandler(h);
+        LOG.setLevel(Level.INFO);
     }
 
     @Test
-    public void logAtInfoAcceptError() throws Exception {
-        final ListLogHandler h = new ListLogHandler();
-        LOG.addHandler(h);
-        LOG.setLevel(Level.INFO);
-
+    public void log_at_info_accept_error_ssl() throws Exception {
         try {
-            server.start();
+            server.start(); waitServerStartup();
 
             HttpServer.RequestListenerThread listener = 
                 (HttpServer.RequestListenerThread)PrivateAccess.getInstanceValue(server, "listenerThread");
 
-            ServerSocket s = (ServerSocket)PrivateAccess.getInstanceValue(listener, "serverSocket");
-            s.close();
+            listener.interrupt();
+            
+            waitLogRecords(h);
+            then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE_SSL);
         } finally {
             if (server != null) {
                 server.stop(); waitServerShutdown();
             }
         }
-        
-        waitLogRecords(h);
-        
-        then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE);
     }
     
     @Test
-    public void logAtInfoCreateConnectionError() throws Exception {
-        final ListLogHandler h = new ListLogHandler();
-        LOG.addHandler(h);
-        LOG.setLevel(Level.INFO);
-        
-        makeDirtyTrickToFailConnectionCreation();
-
+    public void log_at_info_accept_error_web() throws Exception {
         try {
-            server.start();
+            server.start(); waitServerStartup();
+
+            HttpServer.RequestListenerThread listener = 
+                (HttpServer.RequestListenerThread)PrivateAccess.getInstanceValue(server, "webListenerThread");
+            
+            listener.interrupt();
+            
+            waitLogRecords(h);
+            then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE_WEB);
+        } finally {
+            if (server != null) {
+                server.stop(); waitServerShutdown();
+            }
+        }
+    }
+    
+    @Test
+    public void log_at_info_create_connection_error_ssl() throws Exception {
+        try {
+            makeDirtyTrickToFailConnectionCreation();
+            
+            server.start(); waitServerStartup();
 
             Socket s = new Socket("localhost", Integer.parseInt(PORT));
             s.getInputStream();
             s.close();
+            
+            waitLogRecords(h);
+            then(h.getMessages()).contains(MSG_SOCKET_CREATE_CONNECTION_SSL);
         } finally {
             if (server != null) {
                 server.stop(); waitServerShutdown();
             }
+            revertDirtyTrickToFailConnectionCreation();
         }
-        
-        revertDirtyTrickToFailConnectionCreation();
-        
-        waitLogRecords(h);
-        
-        then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE);
+    }
+    
+    @Test
+    public void log_at_info_create_connection_error_web() throws Exception {
+        try {
+            makeDirtyTrickToFailConnectionCreation();
+            
+            server.start(); waitServerStartup();
+
+            Socket s = new Socket("localhost", Integer.parseInt(WEBPORT));
+            s.getInputStream();
+            s.close();
+            
+            waitLogRecords(h);
+            then(h.getMessages()).contains(MSG_SOCKET_CREATE_CONNECTION_WEB);
+        } finally {
+            if (server != null) {
+                server.stop(); waitServerShutdown();
+            }
+            revertDirtyTrickToFailConnectionCreation();
+        }
     }
     
     //
