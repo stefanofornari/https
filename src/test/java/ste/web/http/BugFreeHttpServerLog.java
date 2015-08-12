@@ -51,8 +51,6 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
     
     private BasicHttpConnectionFactory factory = null;
     
-    private ListLogHandler h = null;
-        
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
 	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
@@ -69,9 +67,6 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
         for (Handler h: LOG.getHandlers()) {
             LOG.removeHandler(h);
         }
-        
-        h = new ListLogHandler();
-        LOG.addHandler(h);
         LOG.setLevel(Level.INFO);
     }
     
@@ -83,7 +78,9 @@ public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
     }
 
     @Test
-public void log_at_info_accept_error_ssl() throws Exception {
+    public void log_at_info_accept_error_ssl() throws Exception {
+        ListLogHandler h = createLogHandler();
+    
         server.start(); waitServerStartup();
 
         HttpServer.RequestListenerThread listener = 
@@ -91,12 +88,14 @@ public void log_at_info_accept_error_ssl() throws Exception {
 
         listener.interrupt();
 
-        waitLogRecords(h);
+        waitLogRecords(h, 3);
         then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE_SSL);
     }
     
     @Test
     public void log_at_info_accept_error_web() throws Exception {
+        ListLogHandler h = createLogHandler();
+        
         server.start(); waitServerStartup();
 
         HttpServer.RequestListenerThread listener = 
@@ -104,12 +103,14 @@ public void log_at_info_accept_error_ssl() throws Exception {
 
         listener.interrupt();
 
-        waitLogRecords(h);
+        waitLogRecords(h, 3);
         then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE_WEB);
     }
     
     @Test
-public void log_at_info_create_connection_error_ssl() throws Exception {
+    public void log_at_info_create_connection_error_ssl() throws Exception {
+        ListLogHandler h = createLogHandler();
+    
         makeDirtyTrickToFailConnectionCreation();
 
         server.start(); waitServerStartup();
@@ -118,7 +119,7 @@ public void log_at_info_create_connection_error_ssl() throws Exception {
         s.getInputStream();
         s.close();
 
-        waitLogRecords(h);
+        waitLogRecords(h, 3);
         then(h.getMessages()).contains(MSG_SOCKET_CREATE_CONNECTION_SSL);
         
         revertDirtyTrickToFailConnectionCreation();
@@ -126,6 +127,8 @@ public void log_at_info_create_connection_error_ssl() throws Exception {
     
     @Test
     public void log_at_info_create_connection_error_web() throws Exception {
+        ListLogHandler h = createLogHandler();
+        
         makeDirtyTrickToFailConnectionCreation();
 
         server.start(); waitServerStartup();
@@ -134,27 +137,37 @@ public void log_at_info_create_connection_error_ssl() throws Exception {
         s.getInputStream();
         s.close();
 
-        waitLogRecords(h);
+        waitLogRecords(h, 3);
         then(h.getMessages()).contains(MSG_SOCKET_CREATE_CONNECTION_WEB);
         
         revertDirtyTrickToFailConnectionCreation();
     }
+    
+    @Test
+    public void log_at_info_listeners_startup() throws Exception {
+        ListLogHandler h = createLogHandler();
+        
+        server.start(); waitServerStartup();
 
-    //
-    // TODO: log when the server starts
-    // TODO: log when the server does not start
-    //
+        waitLogRecords(h, 2);
+        then(h.getMessages()).contains(
+            "starting ssl listener on port " + PORT,
+            "starting web listener on port " + WEBPORT
+        );
+    }
+
     
     // --------------------------------------------------------- private methods
         
-    private void waitLogRecords(final ListLogHandler h) throws InterruptedException {
+    private void waitLogRecords(final ListLogHandler h, final int howMany)
+    throws InterruptedException {
         //
         // When running with multiple tests in parallel, it may take a while...
         // let's wait up to 2 seconds
         //
-        int i = 0;
-        while ((++i<50) && (h.size() == 0)) {
-            Thread.sleep(100);
+        int i = 50;
+        while ((--i>0) && (h.size() < howMany)) {
+            Thread.sleep(20);
         }
     }
     
@@ -180,6 +193,14 @@ public void log_at_info_create_connection_error_ssl() throws Exception {
         modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
         
         f.set(null, factory);
+    }
+    
+    
+    private ListLogHandler createLogHandler() {
+        ListLogHandler h = new ListLogHandler();
+        LOG.addHandler(h);
+        
+        return h;
     }
     
     // --------------------------------------------------- TestConnectionFactory

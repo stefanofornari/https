@@ -31,6 +31,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -67,7 +68,7 @@ public class HttpServer {
     public static final String LOG_SERVER = "ste.https.server";
     public static final String CERT_ALIAS = "ste.https";
     
-    final static Logger LOG = Logger.getLogger(LOG_SERVER);
+    final Logger LOG = Logger.getLogger(LOG_SERVER);
 
     public static enum ClientAuthentication {
         BASIC, NONE, CERTIFICATE
@@ -144,12 +145,15 @@ public class HttpServer {
         try {
             socket = (SSLServerSocket) sf.createServerSocket(port);
         } catch (IOException x) {
-            String msg = String.format(
-                "unable to start the ssl server becasue it was not possible to bind port %d (%s)",
-                port,
-                x.getMessage()
-            );
-            LOG.info(msg);
+            if (LOG.isLoggable(Level.INFO)) {
+                LOG.info(
+                    String.format(
+                        "unable to start the ssl server becasue it was not possible to bind port %d (%s)",
+                        port,
+                        x.getMessage()
+                    )
+                );
+            }
             
             return;
         }
@@ -158,23 +162,26 @@ public class HttpServer {
         try {
             webSocket = new ServerSocket(webPort);
         } catch (IOException x) {
-            String msg = String.format(
-                "unable to start the web server becasue it was not possible to bind port %d (%s)",
-                webPort,
-                x.getMessage()
-            );
-            LOG.info(msg);
+            if (LOG.isLoggable(Level.INFO)) {
+                LOG.info(
+                    String.format(
+                        "unable to start the web server becasue it was not possible to bind port %d (%s)",
+                        webPort,
+                        x.getMessage()
+                    )
+                );
+            }
             
             return;
         }
         running = true;
              
         listenerThread = new RequestListenerThread(this, socket);
-        listenerThread.setDaemon(false);
+        listenerThread.setDaemon(true);
         listenerThread.start();
         
         webListenerThread = new RequestListenerThread(this, webSocket);
-        webListenerThread.setDaemon(false);
+        webListenerThread.setDaemon(true);
         webListenerThread.start();      
     }
 
@@ -182,9 +189,19 @@ public class HttpServer {
         running = false;
         if (listenerThread != null) {
             listenerThread.interrupt();
+            try {
+                listenerThread.join(1000);
+            } catch (InterruptedException x) {
+                throw new RuntimeException(x);
+            }
         }
         if (webListenerThread != null) {
             webListenerThread.interrupt();
+            try {
+                webListenerThread.join(1000);
+            } catch (InterruptedException x) {
+                throw new RuntimeException(x);
+            }
         }
     }
 
@@ -331,29 +348,46 @@ public class HttpServer {
 
         @Override
         public void run() {
+            Logger LOG = Logger.getLogger(LOG_SERVER);
+            
             while (server.isRunning() && !Thread.interrupted()) {
                 Socket socket = null;
                 HttpServerConnection conn = null;
                 try {
+                    if (LOG.isLoggable(Level.INFO)) {
+                        LOG.info(
+                            String.format(
+                                "starting %s listener on port %d",
+                                (this.serverSocket.getLocalPort() == server.port) ? "ssl" : "web",
+                                this.serverSocket.getLocalPort()
+                            )
+                        );
+                    }
                     socket = this.serverSocket.accept();
                 } catch (IOException x) {
-                    String msg = String.format(
-                        "stopping to listen on port %d (%s)",
-                        serverSocket.getLocalPort(),
-                        x.getMessage()
-                    );
-                    LOG.info(msg);
+                    if (LOG.isLoggable(Level.INFO)) {
+                        LOG.info(
+                            String.format(
+                                "stopping to listen on port %d (%s)",
+                                this.serverSocket.getLocalPort(),
+                                x.getMessage()
+                            )
+                        );
+                    }
                     break;
                 }
                 try {
                     conn = BasicHttpConnectionFactory.INSTANCE.createConnection(socket);
                 } catch (IOException x) {
-                    String msg = String.format(
-                        "stopping to create connections (%s)",
-                        server.getPort(),
-                        x.getMessage()
-                    );
-                    LOG.info(msg);
+                    if (LOG.isLoggable(Level.INFO)) {
+                        LOG.info(
+                            String.format(
+                            "stopping to create connections on port %d (%s)",
+                            this.serverSocket.getLocalPort(),
+                            x.getMessage()
+                            )
+                        );   
+                    }
                     break;
                 }
 
@@ -395,6 +429,7 @@ public class HttpServer {
 
         @Override
         public void run() {
+            Logger LOG = Logger.getLogger(LOG_SERVER);
             try {
                 while (!Thread.interrupted() && this.conn.isOpen()) {
                     this.http.handleRequest(this.conn);

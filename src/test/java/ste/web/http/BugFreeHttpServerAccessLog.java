@@ -37,8 +37,6 @@ import ste.xtest.logging.ListLogHandler;
  *   <li>BugFreeHttpSessionService
  * </ul>
  * 
- * TODO: add something for web
- * 
  * @author ste
  */
 public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
@@ -76,6 +74,11 @@ public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
         
         HttpResponse res = httpclient.execute(new HttpGet("https://localhost:" + PORT + "/index.html"));
         String sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
+        
+        EntityUtils.consume(res.getEntity());
+        res = httpclient.execute(new HttpGet("http://localhost:" + WEBPORT + "/index.html"));
+        sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
         
         EntityUtils.consume(res.getEntity());
