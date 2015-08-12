@@ -36,6 +36,7 @@ import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
 
@@ -62,26 +63,16 @@ public class BugFreeHttpServerClientAuthenticationCert extends BugFreeHttpServer
     
     @Before
     @Override
-    public void setUp() throws Exception {
-        configuration = new PropertiesConfiguration();
-        configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
-        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
-        configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
+    public void set_up() throws Exception {
+        createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_AUTH, "cert");
-        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
-        
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(DOCROOT));
-        
-        server = new HttpServer(configuration);
-        server.setHandlers(handlers);
+        createServer();
         
         url = new URL("https://localhost:" + server.getPort() + "/index.html");
     }
     
     @Test
-    public void mssingClientAuthenticationWhenRequired() throws Exception {
+    public void mssing_client_authentication_when_required() throws Exception {
         try {
             SSLContext sc = SSLContext.getInstance("TLS");
             sc.init(null, null, null);
@@ -98,12 +89,12 @@ public class BugFreeHttpServerClientAuthenticationCert extends BugFreeHttpServer
                 //
             }
         } finally {
-            server.stop();
+            server.stop(); waitServerShutdown();
         }
     }
     
     @Test
-    public void getHomePage() throws Exception {
+    public void get_home_page() throws Exception {
         //
         // The client key store must contain the private keys of the client
         // identity (mario rossi) obatined importing a signed certificate

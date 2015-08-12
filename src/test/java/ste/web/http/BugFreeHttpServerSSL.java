@@ -41,6 +41,7 @@ import org.junit.rules.TemporaryFolder;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
 import sun.security.x509.AlgorithmId;
@@ -99,7 +100,7 @@ public class BugFreeHttpServerSSL {
         try {
             server = createServer(s);
 
-            server.start();
+            server.start(); Thread.sleep(100);
             then(server.isRunning()).isTrue();
         } finally {
             if (server != null) {
@@ -170,7 +171,8 @@ public class BugFreeHttpServerSSL {
         
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_PORT, "8440");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8880");
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         if (password != null) {
             configuration.setProperty(CONFIG_SSL_PASSWORD, password);

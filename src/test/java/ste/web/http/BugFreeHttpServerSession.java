@@ -25,9 +25,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
@@ -42,11 +40,10 @@ import ste.web.http.handlers.PrintSessionHandler;
 public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {
-        server = createHttpServer();
-        server.start(); Thread.sleep(25);
+        createAndStartServer();
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:8000/index.html");
+        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
         
         HttpResponse response = httpclient.execute(httpget);
         then(response.getStatusLine().getStatusCode())
@@ -96,11 +93,10 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     
     @Test
     public void getNewSession() throws Exception {
-        server = createHttpServer();
-        server.start(); Thread.sleep(25);
+        createAndStartServer();
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:8000/index.html");
+        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
         
         HttpResponse response = httpclient.execute(httpget);
         then(response.getStatusLine().getStatusCode())
@@ -154,11 +150,10 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     
     @Test
     public void sessionExpiration() throws Exception {
-        server = createHttpServer();
-        server.start(); Thread.sleep(25);
+        createAndStartServer();
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:8000/index.html");
+        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
         
         HttpResponse response = httpclient.execute(httpget);
         then(response.getStatusLine().getStatusCode())
@@ -212,21 +207,16 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
     
     // ------------------------------------------------------- protected methods
     
-    protected HttpServer createHttpServer() throws Exception {
-        PropertiesConfiguration c = new PropertiesConfiguration();
-        c.setProperty(CONFIG_HTTPS_ROOT, "src/test");
-        c.setProperty(CONFIG_HTTPS_PORT, "8000");
-        c.setProperty(CONFIG_HTTPS_AUTH, "none");
-        c.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
-        c.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        
-        HttpServer s = new HttpServer(c);
+    protected void createAndStartServer() throws Exception {
+        createDefaultConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
+        createServer();
         
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new PrintSessionHandler());
-        s.setHandlers(handlers);
+        server.setHandlers(handlers);
         
-        return s;
+        server.start(); waitServerStartup();
     }
 
 }

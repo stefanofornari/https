@@ -74,10 +74,10 @@ public class HttpServer {
     };
 
     private SSLServerSocketFactory sf;
-    private int port;
+    private int port, webPort;
     private HttpSessionService http;
     private boolean running;
-    private RequestListenerThread requestListenerThread;
+    private RequestListenerThread listenerThread, webListenerThread;
     private ClientAuthentication authentication;
     private Configuration configuration;
 
@@ -96,6 +96,8 @@ public class HttpServer {
         if (configuration == null) {
             throw new IllegalArgumentException("configuration can not be null");
         }
+        
+        this.configuration = configuration;
  
         String home = configuration.getString(CONFIG_HTTPS_ROOT);
         if (StringUtils.isBlank(home)) {
@@ -110,28 +112,8 @@ public class HttpServer {
             );
         }
 
-        try {
-            port = configuration.getInt(CONFIG_HTTPS_PORT);
-        } catch (NoSuchElementException x) {
-            throw new ConfigurationException(
-                "the server port is unset; please specify a proper value for the property " + CONFIG_HTTPS_PORT
-            );
-        } catch (ConversionException x) {
-            throw new ConfigurationException(
-                "the server port '" + 
-                configuration.getProperty(CONFIG_HTTPS_PORT) + 
-                "' is invalid; please specify a proper value for the property " + CONFIG_HTTPS_PORT
-            );
-        }
-        if (port <= 0) {
-            throw new ConfigurationException(
-                "the server port '" +
-                configuration.getProperty(CONFIG_HTTPS_PORT) + 
-                "' is invalid; please specify a value between 1 and " 
-                + Integer.MAX_VALUE + 
-                " for the property " + CONFIG_HTTPS_PORT
-            );
-        }
+           port = configPort("ssl");
+        webPort = configPort("web");
         
         try {
             String password = configuration.getString(CONFIG_SSL_PASSWORD);
@@ -150,20 +132,21 @@ public class HttpServer {
         }
         
         this.running = false;
-        this.requestListenerThread = null;
-        this.configuration = configuration;
+        this.listenerThread = null;
+        this.webListenerThread = null;
         
         setHandlers(null);
     }
     
     public void start() {
         SSLServerSocket socket = null;
+        ServerSocket webSocket = null;
         try {
             socket = (SSLServerSocket) sf.createServerSocket(port);
         } catch (IOException x) {
             String msg = String.format(
-                "unable to start the server becasue it was not possible to bind port %d (%s)",
-                getPort(),
+                "unable to start the ssl server becasue it was not possible to bind port %d (%s)",
+                port,
                 x.getMessage()
             );
             LOG.info(msg);
@@ -171,17 +154,37 @@ public class HttpServer {
             return;
         }
         socket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
-                
-        requestListenerThread = new RequestListenerThread(this, socket);
-        requestListenerThread.setDaemon(false);
-        requestListenerThread.start();
+        
+        try {
+            webSocket = new ServerSocket(webPort);
+        } catch (IOException x) {
+            String msg = String.format(
+                "unable to start the web server becasue it was not possible to bind port %d (%s)",
+                webPort,
+                x.getMessage()
+            );
+            LOG.info(msg);
+            
+            return;
+        }
         running = true;
+             
+        listenerThread = new RequestListenerThread(this, socket);
+        listenerThread.setDaemon(false);
+        listenerThread.start();
+        
+        webListenerThread = new RequestListenerThread(this, webSocket);
+        webListenerThread.setDaemon(false);
+        webListenerThread.start();      
     }
 
     public void stop() {
         running = false;
-        if (requestListenerThread != null) {
-            requestListenerThread.interrupt();
+        if (listenerThread != null) {
+            listenerThread.interrupt();
+        }
+        if (webListenerThread != null) {
+            webListenerThread.interrupt();
         }
     }
 
@@ -203,21 +206,10 @@ public class HttpServer {
 
     /**
      * @param handlers the new handlers; if null, no handlers will be set -
-     * MAYBE NULL
+     * MAY BE NULL
      */
     public void setHandlers(HttpRequestHandlerMapper handlers) {
-        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
-        
-        // Set up the HTTP protocol processor
-        HttpProcessor httpproc = buildHttpProcessor();
-
-        // Set up request handlers end HTTP service
-        if (handlers != null) {
-            http = new HttpSessionService(httpproc, handlers, sessionLifetime);
-        } else {
-            UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            http = new HttpSessionService(httpproc, registry, sessionLifetime);
-        }
+        setHandlers(handlers, false);
     }    
     
     // --------------------------------------------------------- private methods
@@ -276,6 +268,55 @@ public class HttpServer {
                 .add(new ResponseContent())
                 .add(new ResponseConnControl()).build();
     }
+    
+    private int configPort(final String whichPort) throws ConfigurationException {
+        final String KEY = "web".equals(whichPort) 
+                         ? CONFIG_HTTPS_WEB_PORT
+                         : CONFIG_HTTPS_PORT
+                         ;
+        int p = 0;
+        try {
+            p = configuration.getInt(KEY);
+        } catch (NoSuchElementException x) {
+            throw new ConfigurationException(
+                "the " + whichPort + " port is unset; please specify a proper value for the property " + KEY
+            );
+        } catch (ConversionException x) {
+            throw new ConfigurationException(
+                "the " + whichPort + " port <" + 
+                configuration.getProperty(KEY) + 
+                "> is invalid; please specify a proper value for the property " + 
+                KEY
+            );
+        }
+        if (p <= 0) {
+            throw new ConfigurationException(
+                "the " + whichPort + " port <" +
+                configuration.getProperty(KEY) + 
+                "> is invalid; please specify a value between 1 and " 
+                + Integer.MAX_VALUE + 
+                " for the property " +
+                KEY
+            );
+        }
+        
+        return p;
+    }
+    
+    private void setHandlers(HttpRequestHandlerMapper handlers, boolean web) {
+        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
+        
+        // Set up the HTTP protocol processor
+        HttpProcessor httpproc = buildHttpProcessor();
+
+        // Set up request handlers end HTTP service
+        if (handlers != null) {
+            http = new HttpSessionService(httpproc, handlers, sessionLifetime);
+        } else {
+            UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
+            http = new HttpSessionService(httpproc, registry, sessionLifetime);
+        }
+    }
 
     // --------------------------------------------------- RequestListenerThread
     
@@ -298,7 +339,7 @@ public class HttpServer {
                 } catch (IOException x) {
                     String msg = String.format(
                         "stopping to listen on port %d (%s)",
-                        server.getPort(),
+                        serverSocket.getLocalPort(),
                         x.getMessage()
                     );
                     LOG.info(msg);
@@ -415,4 +456,5 @@ public class HttpServer {
         }
 
     }
+    
 }

@@ -15,54 +15,49 @@
  */
 package ste.web.http;
 
-import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpConnectionFactory;
 import org.apache.http.impl.DefaultBHttpServerConnection;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
-import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
-import ste.web.http.handlers.FileHandler;
 import ste.xtest.logging.ListLogHandler;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
- *
+ * TODO: cover web case too
+ * 
  * @author ste
  */
-@Ignore
-//
-// TODO: it often fails; to be fixed
-//
-public class BugFreeHttpServerLog {
+public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
     
     private static final String MSG_SOCKET_ACCEPT_FAILURE =
-        "stopping to listen on port 8000 (Socket closed)";
+        "stopping to listen on port " + PORT + " (Socket closed)";
     private static final String MSG_SOCKET_CREATE_CONNECTION =
         "stopping to create connections (Connection error)";
     
     private static final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
+    
+    private BasicHttpConnectionFactory factory = null;
         
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD
 	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
     
     @Before
-    public void setUp() throws Exception {   
+    @Override
+    public void set_up() throws Exception {   
+        super.set_up();
         //
         // Logger.getLogger() returns the same instance to multiple threads
         // therefore each method must add its own handler; we clean up the 
@@ -79,19 +74,17 @@ public class BugFreeHttpServerLog {
         LOG.addHandler(h);
         LOG.setLevel(Level.INFO);
 
-        HttpServer server = null;
         try {
-            server = createServer();
             server.start();
 
             HttpServer.RequestListenerThread listener = 
-                (HttpServer.RequestListenerThread)PrivateAccess.getInstanceValue(server, "requestListenerThread");
+                (HttpServer.RequestListenerThread)PrivateAccess.getInstanceValue(server, "listenerThread");
 
             ServerSocket s = (ServerSocket)PrivateAccess.getInstanceValue(listener, "serverSocket");
             s.close();
         } finally {
             if (server != null) {
-                server.stop();
+                server.stop(); waitServerShutdown();
             }
         }
         
@@ -105,48 +98,35 @@ public class BugFreeHttpServerLog {
         final ListLogHandler h = new ListLogHandler();
         LOG.addHandler(h);
         LOG.setLevel(Level.INFO);
+        
+        makeDirtyTrickToFailConnectionCreation();
 
-        HttpServer server = null;
         try {
-            server = createServer();
             server.start();
 
-            HttpServer.RequestListenerThread listener = 
-                (HttpServer.RequestListenerThread)PrivateAccess.getInstanceValue(server, "requestListenerThread");
-            PrivateAccess.setInstanceValue(listener, "connectionFactory", new TestConnectionFactory());
-
-            Socket s = new Socket("localhost", 8000);
+            Socket s = new Socket("localhost", Integer.parseInt(PORT));
             s.getInputStream();
             s.close();
         } finally {
             if (server != null) {
-                server.stop();
+                server.stop(); waitServerShutdown();
             }
         }
+        
+        revertDirtyTrickToFailConnectionCreation();
+        
         waitLogRecords(h);
         
         then(h.getMessages()).contains(MSG_SOCKET_ACCEPT_FAILURE);
     }
     
+    //
+    // TODO: log when the server starts
+    // TODO: log when the server does not start
+    //
+    
     // --------------------------------------------------------- private methods
-    
-    private HttpServer createServer() throws Exception {
-        File root = new File("src/test");
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(root.getPath()));
         
-        PropertiesConfiguration configuration= new PropertiesConfiguration();
-        configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
-        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
-        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-
-        HttpServer server = new HttpServer(configuration);
-        server.setHandlers(handlers);
-
-        return server;
-    }
-    
     private void waitLogRecords(final ListLogHandler h) throws InterruptedException {
         //
         // When running with multiple tests in parallel, it may take a while...
@@ -158,13 +138,37 @@ public class BugFreeHttpServerLog {
         }
     }
     
+    private void makeDirtyTrickToFailConnectionCreation()
+    throws Exception {
+        factory = BasicHttpConnectionFactory.INSTANCE;
+        
+        Field f = BasicHttpConnectionFactory.class.getField("INSTANCE");
+        
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
+        
+        f.set(null, new TestConnectionFactory());
+    }
+    
+    private void revertDirtyTrickToFailConnectionCreation()
+    throws Exception {
+        Field f = BasicHttpConnectionFactory.class.getField("INSTANCE");
+        
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
+        
+        f.set(null, factory);
+    }
+    
     // --------------------------------------------------- TestConnectionFactory
     
-    class TestConnectionFactory implements HttpConnectionFactory<DefaultBHttpServerConnection> {
+    class TestConnectionFactory extends BasicHttpConnectionFactory {
         @Override
-        public DefaultBHttpServerConnection createConnection(Socket socket) throws IOException {
+        public BasicHttpConnection createConnection(Socket socket) throws IOException {
             System.out.println("Fake HttpConnectionFactory!!!");
-            throw new IOException("Connection error");
+            throw new IOException("connection error: fake HttpConnectionFactory!!!");
         }
     }
     

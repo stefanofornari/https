@@ -32,6 +32,7 @@ import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 
 /**
@@ -42,7 +43,8 @@ public abstract class BugFreeHttpServerBase {
     protected static final String SSL_PASSWORD = "20150630";
     protected static final String HOME = "src/test";
     protected static final String DOCROOT = "src/test/docroot";
-    protected static final String PORT = "8000";
+    protected static final String PORT = "8400";
+    protected static final String WEBPORT = "8888";
 
     @Rule
     public final TestRule PRINT_TEST_NAME = new TestWatcher() {
@@ -65,24 +67,13 @@ public abstract class BugFreeHttpServerBase {
     protected HttpServer server = null;
 
     @Before
-    public void setUp() throws Exception  {
-        configuration = new PropertiesConfiguration();
-        configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
-        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
-        configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
-        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
-        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
-        
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(DOCROOT));
-        
-        server = new HttpServer(configuration);
-        server.setHandlers(handlers);
+    public void set_up() throws Exception  {
+        createDefaultConfiguration();
+        createServer();
     }
 
     @After
-    public void tearDown() throws IOException {
+    public void tear_down() throws IOException {
         if (server != null) {
             server.stop();
         }
@@ -90,14 +81,51 @@ public abstract class BugFreeHttpServerBase {
     
     // ------------------------------------------------------- protected methods
     
-    protected void waitServerStartup() {
-        try {
-            Thread.sleep(25);
-        } catch (InterruptedException x) {
-            //
-            // what can I do here??? :)
-            //
+    protected void waitServerStartup() throws Exception {
+        long start = System.currentTimeMillis();
+        int maxTry = 400;
+        while ((--maxTry > 0) && !server.isRunning()) {
+            Thread.sleep(20);
         }
+        
+        if (maxTry == 0) {
+            throw new InterruptedException(
+                "server not ready in " + (System.currentTimeMillis()-start) + " ms"
+            );
+        }
+    }
+    
+    protected void waitServerShutdown() throws Exception {
+        long start = System.currentTimeMillis();
+        int maxTry = 400;
+        while ((--maxTry > 0) && server.isRunning()) {
+            Thread.sleep(20);
+        }
+        
+        if (maxTry == 0) {
+            throw new InterruptedException(
+                "server not stopped in " + (System.currentTimeMillis()-start) + " ms"
+            );
+        }
+    }
+    
+    protected void createServer() throws Exception {
+        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
+        handlers.register("*", new FileHandler(DOCROOT));
+        
+        server = new HttpServer(configuration);
+        server.setHandlers(handlers);
+    }
+    
+    protected void createDefaultConfiguration() {
+        configuration = new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
+        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, WEBPORT);
+        configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
+        configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
     }
 
 }

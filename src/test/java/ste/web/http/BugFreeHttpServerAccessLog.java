@@ -36,6 +36,9 @@ import ste.xtest.logging.ListLogHandler;
  * <ul>
  *   <li>BugFreeHttpSessionService
  * </ul>
+ * 
+ * TODO: add something for web
+ * 
  * @author ste
  */
 public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
@@ -43,7 +46,7 @@ public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
     private static final Logger LOG = Logger.getLogger(LOG_ACCESS);
     
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void set_up_class() throws Exception {
         //
         // Logger.getLogger() returns the same instance to multiple threads
         // therefore each method must add its own handler; we clean up the 
@@ -55,28 +58,28 @@ public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
     }
     
     @Before
-    public void setUp() throws Exception  {
-        super.setUp();
+    public void set_up() throws Exception  {
+        super.set_up();
     }
 
     @Test
-    public void logAccessForOKRequests() throws Exception {
+    public void log_access_for_ok_requests() throws Exception {
         final ListLogHandler h = new ListLogHandler();
         LOG.addHandler(h);
         LOG.setLevel(Level.INFO);
         
-        server.start(); Thread.sleep(25);
+        server.start(); waitServerStartup();
         
         DefaultHttpClient httpclient = new DefaultHttpClient();
         
         // format: <remote address> <user> <session id> "<request> <protocol version>" <status>
         
-        HttpResponse res = httpclient.execute(new HttpGet("https://localhost:8000/index.html"));
+        HttpResponse res = httpclient.execute(new HttpGet("https://localhost:" + PORT + "/index.html"));
         String sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
         
         EntityUtils.consume(res.getEntity());
-        httpclient.execute(new HttpGet("https://localhost:8000/index2.html"));
+        httpclient.execute(new HttpGet("https://localhost:" + PORT + "/index2.html"));
         sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index2.html HTTP/1.1\" 404");
     }

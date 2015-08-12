@@ -36,12 +36,11 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
     public final ProvideSystemProperty SSL_PASSWORD
 	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
 
-
     @Test
     public void getHomePage() throws Exception {
         server.start(); waitServerStartup();
 
-        URL url = new URL("https://localhost:8000/index.html");
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
         then(((HttpsURLConnection)url.openConnection()).getResponseCode())
             .isEqualTo(HttpsURLConnection.HTTP_OK);
     }
@@ -50,11 +49,11 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
     public void getContent() throws Exception {
         server.start(); waitServerStartup();
 
-        URL url = new URL("https://localhost:8000/folder/notexisting.txt");
+        URL url = new URL("https://localhost:" + PORT + "/folder/notexisting.txt");
         then(((HttpsURLConnection)url.openConnection()).getResponseCode())
             .isEqualTo(HttpsURLConnection.HTTP_NOT_FOUND);
         
-        url = new URL("https://localhost:8000/folder/readme.txt");
+        url = new URL("https://localhost:" + PORT + "/folder/readme.txt");
         then(((HttpsURLConnection)url.openConnection()).getResponseCode())
             .isEqualTo(HttpsURLConnection.HTTP_OK);
     }
@@ -67,7 +66,7 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
     public void noHTTPServerHeader() throws Exception {
         server.start(); waitServerStartup();
 
-        URL url = new URL("https://localhost:8000/diskone/readme.txt");
+        URL url = new URL("https://localhost:" + PORT + "/diskone/readme.txt");
 
         then(
             ((HttpsURLConnection)url.openConnection()).getHeaderField("Server")
@@ -76,17 +75,16 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
 
     @Test
     public void mssingClientAuthenticationWhenRequired() throws Exception {
-        HttpServer server2 = null;
         try {
             SSLContext sc = SSLContext.getInstance("TLS");
             sc.init(null, null, null);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
             configuration.setProperty(Constants.CONFIG_HTTPS_AUTH, "cert");
-            server2 = new HttpServer(configuration);
-            server2.start(); waitServerStartup();
+            server = new HttpServer(configuration);
+            server.start(); waitServerStartup();
 
-            URL url = new URL("https://localhost:8000/index.html");
+            URL url = new URL("https://localhost:" + PORT + "/index.html");
             try {
                 ((HttpsURLConnection)url.openConnection()).getResponseCode();
                 fail("SSL handshake not failed!");
@@ -96,7 +94,7 @@ public class BugFreeHttpServerStartup extends BugFreeHttpServerBase {
                 //
             }
         } finally {
-            server2.stop();
+            server.stop(); waitServerShutdown();
         }
     }
 }

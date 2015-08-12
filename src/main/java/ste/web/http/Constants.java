@@ -23,6 +23,8 @@ public class Constants {
     public static final String CONFIG_SSL_PASSWORD  = "ste.https.ssl.password";
     public static final String CONFIG_HTTPS_ROOT    = "ste.https.root";
     public static final String CONFIG_HTTPS_PORT    = "ste.https.port";
+    public static final String CONFIG_HTTPS_WEB_PORT 
+                                                    = "ste.https.web.port";
     public static final String CONFIG_HTTPS_AUTH    = "ste.https.auth";
     public static final String CONFIG_HTTPS_SESSION_LIFETIME 
                                                     = "ste.http.session.lifetime";

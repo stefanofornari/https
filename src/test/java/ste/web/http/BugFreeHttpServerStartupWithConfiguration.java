@@ -28,6 +28,8 @@ import static ste.xtest.Constants.*;
 
 /**
  *
+ * TODO: move here web config
+ * 
  * @author ste
  */
 public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServerBase {
@@ -56,6 +58,7 @@ public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServer
     public void createServerWithConfigurationObjectKORoot() throws Exception {  
         Configuration configuration = new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_PORT, "8080");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
        
         try {
             new HttpServer(configuration);
@@ -121,9 +124,11 @@ public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServer
         
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         configuration.setProperty(CONFIG_HTTPS_PORT, "8080");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
         then(new HttpServer(configuration).getPort()).isEqualTo(8080);
         
         configuration.setProperty(CONFIG_HTTPS_PORT, "8181");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
         then(new HttpServer(configuration).getPort()).isEqualTo(8181);
     }
     
@@ -132,6 +137,7 @@ public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServer
         Configuration configuration = new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
         configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         
         then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.BASIC);

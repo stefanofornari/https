@@ -30,19 +30,21 @@ import static ste.web.http.BugFreeHttpServerBase.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
+import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
-import ste.web.http.HttpServer.ClientAuthentication;
 import ste.web.http.handlers.FileHandler;
 import ste.xtest.logging.ListLogHandler;
 
 /**
  *
  * @author ste
+ * 
+ * TODO: do the same with web
  */
 public class BugFreeHttpServerStartupLog {
     
     private static final String MSG_PORT_BINDING_FAILURE =
-        "unable to start the server becasue it was not possible to bind port 8000 (Address already in use)";
+        "unable to start the ssl server becasue it was not possible to bind port 8000 (Address already in use)";
     
     private static final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
         
@@ -75,8 +77,9 @@ public class BugFreeHttpServerStartupLog {
             server2.start();
             waitLogRecords(h);
         } finally {
-            server1.stop();
+            server1.stop(); 
             server2.stop();
+            Thread.sleep(100);
         }
         
         then(server2.isRunning()).isFalse();
@@ -91,6 +94,7 @@ public class BugFreeHttpServerStartupLog {
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
         configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "7000");
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         

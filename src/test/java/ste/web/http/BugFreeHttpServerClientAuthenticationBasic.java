@@ -50,13 +50,8 @@ public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServe
     
     @Before
     @Override
-    public void setUp() throws Exception {
-        configuration = new PropertiesConfiguration();
-        configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
-        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
-        configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
-        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
+    public void set_up() throws Exception {
+        createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_AUTH, "basic");
         
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
@@ -83,7 +78,7 @@ public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServe
                 ((HttpsURLConnection)auth.openConnection()).getResponseCode()
             ).isEqualTo(HttpStatus.SC_UNAUTHORIZED);
         } finally {
-            server.stop();
+            server.stop(); waitServerShutdown();
         }
     }
     
@@ -100,7 +95,7 @@ public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServe
                 ((HttpsURLConnection)index.openConnection()).getResponseCode()
             ).isEqualTo(HttpStatus.SC_OK);
         } finally {
-            server.stop();
+            server.stop(); waitServerShutdown();
         }
     }
     
@@ -120,7 +115,7 @@ public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServe
                 conn.getResponseCode()
             ).isEqualTo(HttpStatus.SC_OK);
         } finally {
-            server.stop();
+            server.stop(); waitServerShutdown();
         }
     }
     
