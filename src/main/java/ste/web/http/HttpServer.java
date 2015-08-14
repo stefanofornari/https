@@ -76,7 +76,7 @@ public class HttpServer {
 
     private SSLServerSocketFactory sf;
     private int port, webPort;
-    private HttpSessionService http;
+    private HttpSessionService ssl, web;
     private boolean running;
     private RequestListenerThread listenerThread, webListenerThread;
     private ClientAuthentication authentication;
@@ -209,8 +209,8 @@ public class HttpServer {
         return running;
     }
 
-    public HttpSessionService getHttpService() {
-        return http;
+    public HttpSessionService getSSLService() {
+        return ssl;
     }
 
     public int getPort() {
@@ -328,10 +328,10 @@ public class HttpServer {
 
         // Set up request handlers end HTTP service
         if (handlers != null) {
-            http = new HttpSessionService(httpproc, handlers, sessionLifetime);
+            ssl = new HttpSessionService(httpproc, handlers, sessionLifetime);
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            http = new HttpSessionService(httpproc, registry, sessionLifetime);
+            ssl = new HttpSessionService(httpproc, registry, sessionLifetime);
         }
     }
 
@@ -392,7 +392,7 @@ public class HttpServer {
                 }
 
                 // Start worker thread
-                Thread t = new WorkerThread(server.getHttpService(), conn);
+                Thread t = new WorkerThread(server.getSSLService(), conn);
                 t.setDaemon(true);
                 t.start();
             }
