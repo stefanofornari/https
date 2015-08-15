@@ -33,7 +33,7 @@ import ste.web.http.handlers.PrintSessionHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
+public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {
         createAndStartServer();

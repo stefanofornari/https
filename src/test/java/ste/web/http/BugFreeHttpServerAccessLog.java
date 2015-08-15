@@ -39,7 +39,7 @@ import ste.xtest.logging.ListLogHandler;
  * 
  * @author ste
  */
-public class BugFreeHttpServerAccessLog extends BugFreeHttpServerBase {
+public class BugFreeHttpServerAccessLog extends AbstractBugFreeHttpServer {
         
     private static final Logger LOG = Logger.getLogger(LOG_ACCESS);
     

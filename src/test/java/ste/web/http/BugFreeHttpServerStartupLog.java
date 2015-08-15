@@ -22,19 +22,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import static ste.web.http.BugFreeHttpServerBase.SSL_PASSWORD;
+import static ste.web.http.AbstractBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
+import ste.xtest.junit.BugFree;
 import ste.xtest.logging.ListLogHandler;
 
 /**
@@ -42,7 +42,7 @@ import ste.xtest.logging.ListLogHandler;
  * @author ste
  * 
  */
-public class BugFreeHttpServerStartupLog {
+public class BugFreeHttpServerStartupLog extends BugFree {
     private static final String MSG_PORT_BINDING_FAILURE =
         "unable to start the server because it was not possible to bind port %d (address already in use)";
     
@@ -53,7 +53,7 @@ public class BugFreeHttpServerStartupLog {
 	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
     
     @Before
-    public void setUp() throws Exception {   
+    public void set_up() throws Exception {   
         //
         // Logger.getLogger() returns the same instance to multiple threads
         // therefore each method must add its own handler; we clean up the 
@@ -98,13 +98,12 @@ public class BugFreeHttpServerStartupLog {
                    server2 = createServer(8500, 8800);
         
         try {
-            server1.start();
+            server1.start(); waitServerStartup(server1);
             server2.start();
             waitLogRecords(h);
         } finally {
-            server1.stop(); 
-            server2.stop();
-            Thread.sleep(100);
+            server1.stop(); waitServerShutdown(server1);
+            server2.stop(); waitServerShutdown(server2);
         }
         
         then(server2.isRunning()).isFalse();
@@ -143,6 +142,34 @@ public class BugFreeHttpServerStartupLog {
         int i = 0;
         while ((++i<50) && (h.size() == 0)) {
             Thread.sleep(100);
+        }
+    }
+    
+    private void waitServerStartup(final HttpServer server) throws Exception {
+        long start = System.currentTimeMillis();
+        int maxTry = 400;
+        while ((--maxTry > 0) && !server.isRunning()) {
+            Thread.sleep(20);
+        }
+        
+        if (maxTry == 0) {
+            throw new InterruptedException(
+                "server not ready in " + (System.currentTimeMillis()-start) + " ms"
+            );
+        }
+    }
+    
+    private void waitServerShutdown(final HttpServer server) throws Exception {
+        long start = System.currentTimeMillis();
+        int maxTry = 400;
+        while ((--maxTry > 0) && server.isRunning()) {
+            Thread.sleep(20);
+        }
+        
+        if (maxTry == 0) {
+            throw new InterruptedException(
+                "server not stopped in " + (System.currentTimeMillis()-start) + " ms"
+            );
         }
     }
     

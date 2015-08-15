@@ -27,7 +27,7 @@ import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
  *
  * @author ste
  */
-public class BugFreeHttpServerWeb extends BugFreeHttpServerBase {
+public class BugFreeHttpServerWeb extends AbstractBugFreeHttpServer {
 
     @Test
     public void start_web_on_given_port() throws Exception {

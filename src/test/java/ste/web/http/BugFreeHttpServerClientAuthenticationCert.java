@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import static ste.web.http.BugFreeHttpServerBase.SSL_PASSWORD;
+import static ste.web.http.AbstractBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
@@ -44,7 +44,7 @@ import ste.web.http.handlers.FileHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerClientAuthenticationCert extends BugFreeHttpServerBase {
+public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHttpServer {
     
     private URL url = null;
     

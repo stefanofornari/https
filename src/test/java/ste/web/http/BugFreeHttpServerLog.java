@@ -36,7 +36,7 @@ import ste.xtest.reflect.PrivateAccess;
  * 
  * @author ste
  */
-public class BugFreeHttpServerLog extends BugFreeHttpServerBase {
+public class BugFreeHttpServerLog extends AbstractBugFreeHttpServer {
     
     private static final String MSG_SOCKET_ACCEPT_FAILURE_SSL =
         "stopping to listen on port " + PORT + " (Socket closed)";

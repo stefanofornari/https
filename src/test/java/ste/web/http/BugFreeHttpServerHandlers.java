@@ -36,7 +36,7 @@ import ste.xtest.reflect.PrivateAccess;
  *
  * @author ste
  */
-public class BugFreeHttpServerHandlers extends BugFreeHttpServerBase {
+public class BugFreeHttpServerHandlers extends AbstractBugFreeHttpServer {
     
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD

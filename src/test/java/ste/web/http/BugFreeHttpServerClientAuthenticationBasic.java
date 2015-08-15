@@ -37,7 +37,7 @@ import ste.web.http.handlers.FileHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServerBase {
+public class BugFreeHttpServerClientAuthenticationBasic extends AbstractBugFreeHttpServer {
     
     private URL index = null, auth = null;
     

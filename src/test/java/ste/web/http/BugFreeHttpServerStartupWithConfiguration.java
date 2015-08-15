@@ -32,7 +32,7 @@ import static ste.xtest.Constants.*;
  * 
  * @author ste
  */
-public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServerBase {
+public class BugFreeHttpServerStartupWithConfiguration extends AbstractBugFreeHttpServer {
     
     @Before
     public void setUp() {
