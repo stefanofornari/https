@@ -30,6 +30,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,8 +56,9 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.protocol.HttpRequestHandlerMapper;
+import org.apache.http.protocol.HttpRequestHandler;
 import static ste.web.http.Constants.*;
+import ste.web.http.handlers.RestrictedResourceHandler;
 
 /**
  * An HTTPS server
@@ -75,7 +77,7 @@ public class HttpServer {
     };
 
     private SSLServerSocketFactory sf;
-    private int port, webPort;
+    private int sslPort, webPort;
     private HttpSessionService ssl, web;
     private boolean running;
     private RequestListenerThread listenerThread, webListenerThread;
@@ -113,7 +115,7 @@ public class HttpServer {
             );
         }
 
-           port = configPort("ssl");
+           sslPort = configPort("ssl");
         webPort = configPort("web");
         
         try {
@@ -140,16 +142,14 @@ public class HttpServer {
     }
     
     public void start() {
-        SSLServerSocket socket = null;
+        SSLServerSocket sslSocket = null;
         ServerSocket webSocket = null;
         try {
-            socket = (SSLServerSocket) sf.createServerSocket(port);
+            sslSocket = (SSLServerSocket) sf.createServerSocket(sslPort);
         } catch (IOException x) {
             if (LOG.isLoggable(Level.INFO)) {
-                LOG.info(
-                    String.format(
-                        "unable to start the server because it was not possible to bind port %d (%s)",
-                        port,
+                LOG.info(String.format("unable to start the server because it was not possible to bind port %d (%s)",
+                        sslPort,
                         x.getMessage().toLowerCase()
                     )
                 );
@@ -157,7 +157,7 @@ public class HttpServer {
             
             return;
         }
-        socket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
+        sslSocket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
         
         try {
             webSocket = new ServerSocket(webPort);
@@ -176,7 +176,7 @@ public class HttpServer {
         }
         running = true;
              
-        listenerThread = new RequestListenerThread(this, socket);
+        listenerThread = new RequestListenerThread(this, sslSocket);
         listenerThread.setDaemon(true);
         listenerThread.start();
         
@@ -212,9 +212,27 @@ public class HttpServer {
     public HttpSessionService getSSLService() {
         return ssl;
     }
-
+    
+    public HttpSessionService getWebService() {
+        return web;
+    }
+    
+    /**
+     * @return the ssl sslPort
+     * 
+     * @deprecated use getSSLPort();
+     */
+    @Deprecated
     public int getPort() {
-        return port;
+        return getSSLPort();
+    }
+
+    public int getSSLPort() {
+        return sslPort;
+    }
+    
+    public int getWebPort() {
+        return webPort;
     }
     
     public ClientAuthentication getAuthentication() {
@@ -222,11 +240,35 @@ public class HttpServer {
     }
 
     /**
-     * @param handlers the new handlers; if null, no handlers will be set -
-     * MAY BE NULL
+     * @param handlers the new handlers; if null, no handlers will be set - MAY BE NULL
      */
-    public void setHandlers(HttpRequestHandlerMapper handlers) {
-        setHandlers(handlers, false);
+    public void setHandlers(HashMap<String, HttpRequestHandler> handlers) {
+        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
+        
+        // Set up the HTTP protocol processor
+        HttpProcessor httpproc = buildHttpProcessor();
+        
+        // Set up request handlers end HTTP service
+        if (handlers != null) {
+            UriHttpRequestHandlerMapper sslMapper = new UriHttpRequestHandlerMapper();
+            UriHttpRequestHandlerMapper webMapper = new UriHttpRequestHandlerMapper();
+            
+            for (String pattern: handlers.keySet()) {
+                HttpRequestHandler handler = handlers.get(pattern);
+                
+                sslMapper.register(pattern, handler);
+                if (!(handler instanceof RestrictedResourceHandler)) {
+                    webMapper.register(pattern, handler); 
+                }
+            }
+            
+            ssl = new HttpSessionService(httpproc, sslMapper, sessionLifetime);
+            web = new HttpSessionService(httpproc, webMapper, sessionLifetime);
+        } else {
+            UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
+            ssl = new HttpSessionService(httpproc, registry, sessionLifetime);
+            web = new HttpSessionService(httpproc, registry, sessionLifetime);
+        }
     }    
     
     // --------------------------------------------------------- private methods
@@ -319,31 +361,18 @@ public class HttpServer {
         
         return p;
     }
-    
-    private void setHandlers(HttpRequestHandlerMapper handlers, boolean web) {
-        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
-        
-        // Set up the HTTP protocol processor
-        HttpProcessor httpproc = buildHttpProcessor();
-
-        // Set up request handlers end HTTP service
-        if (handlers != null) {
-            ssl = new HttpSessionService(httpproc, handlers, sessionLifetime);
-        } else {
-            UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            ssl = new HttpSessionService(httpproc, registry, sessionLifetime);
-        }
-    }
 
     // --------------------------------------------------- RequestListenerThread
     
     static class RequestListenerThread extends Thread {
         private final ServerSocket serverSocket;
         private final HttpServer server;
+        private final boolean isSSL;
 
         public RequestListenerThread(final HttpServer server, final ServerSocket serverSocket) {
             this.serverSocket = serverSocket;
             this.server = server;
+            this.isSSL = (this.serverSocket.getLocalPort() == server.sslPort);
         }
 
         @Override
@@ -355,10 +384,8 @@ public class HttpServer {
                 HttpServerConnection conn = null;
                 try {
                     if (LOG.isLoggable(Level.INFO)) {
-                        LOG.info(
-                            String.format(
-                                "starting %s listener on port %d",
-                                (this.serverSocket.getLocalPort() == server.port) ? "ssl" : "web",
+                        LOG.info(String.format("starting %s listener on port %d",
+                                isSSL ? "ssl" : "web",
                                 this.serverSocket.getLocalPort()
                             )
                         );
@@ -392,7 +419,10 @@ public class HttpServer {
                 }
 
                 // Start worker thread
-                Thread t = new WorkerThread(server.getSSLService(), conn);
+                Thread t = new WorkerThread(
+                    isSSL ? server.getSSLService() : server.getWebService(), 
+                    conn
+                );
                 t.setDaemon(true);
                 t.start();
             }
@@ -431,7 +461,7 @@ public class HttpServer {
         public void run() {
             Logger LOG = Logger.getLogger(LOG_SERVER);
             try {
-                while (!Thread.interrupted() && this.conn.isOpen()) {
+                if (!Thread.interrupted() && this.conn.isOpen()) {
                     this.http.handleRequest(this.conn);
                 }
             } catch (ConnectionClosedException x) {

@@ -15,7 +15,9 @@
  */
 package ste.web.http;
 
+import java.util.HashMap;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static ste.web.http.Constants.*;
 import ste.web.http.handlers.FileHandler;
@@ -39,8 +41,8 @@ public class HttpServerCLI {
         
         HttpServer server = new HttpServer(configuration);
         
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler("src/test/docroot"));
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new FileHandler("src/test/docroot"));
         server.setHandlers(handlers);
         
         server.start();

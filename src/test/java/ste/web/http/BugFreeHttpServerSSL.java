@@ -28,9 +28,10 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.HashMap;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
+import org.apache.http.protocol.HttpRequestHandler;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
@@ -166,8 +167,8 @@ public class BugFreeHttpServerSSL {
     // --------------------------------------------------------- private methods
     
     private HttpServer createServer(String password) throws Exception {
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(root.getPath()));
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new FileHandler(root.getPath()));
         
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());

@@ -16,6 +16,7 @@
 package ste.web.http;
 
 import java.io.IOException;
+import java.util.HashMap;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -28,6 +29,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
+import ste.web.http.handlers.RestrictedResourceHandler;
 import ste.xtest.reflect.PrivateAccess;
 
 /**
@@ -41,7 +43,7 @@ public class BugFreeHttpServerHandlers extends BugFreeHttpServerBase {
 	 = new ProvideSystemProperty(CONFIG_SSL_PASSWORD, "20150630");
     
     @Test
-    public void setHandlersDefault() throws Exception {
+    public void set_default_handlers() throws Exception {
         server.setHandlers(null);
         
         //
@@ -49,26 +51,71 @@ public class BugFreeHttpServerHandlers extends BugFreeHttpServerBase {
         // internal implementation, but good enough for now...
         //
         HttpRequestHandlerMapper handlers = 
-            (HttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getHttpService(), "handlerMapper");
+            (HttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
         
         then(handlers).isNotNull();
     }
-    
+        
     @Test
-    public void setHandlers() throws Exception {
+    public void not_restricted_handlers_set_for_both_ssl_and_web() throws Exception {
         server.setHandlers(null);
-        then(PrivateAccess.getInstanceValue(server.getHttpService(), "handlerMapper")).isNotNull();
+        then(PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper")).isNotNull();
         
         //
         // Not very nice because it may break if apache HttpServer changes the
         // internal implementation, but good enough for now...
         //
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("/1/*", new TestHandler());
+        handlers.put("/2/*", new TestHandler());
+        
         server.setHandlers(handlers);
-        then(PrivateAccess.getInstanceValue(server.getHttpService(), "handlerMapper"))
-            .isSameAs(handlers);
+        
+        UriHttpRequestHandlerMapper mapper = 
+            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
+        then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isSameAs(handlers.get("/1/*"));
+        then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
     }
     
+    @Test
+    public void restricted_handlers_set_for_ssl_only() throws Exception {
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        
+        handlers.put("/1/*", new RestrictedResourceHandler(new TestHandler(), null, null));
+        handlers.put("/2/*", new RestrictedResourceHandler(new TestHandler(), null, null));
+        
+        server.setHandlers(handlers);
+        
+        UriHttpRequestHandlerMapper mapper = 
+            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
+        then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isSameAs(handlers.get("/1/*"));
+        then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
+        
+        mapper = 
+            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getWebService(), "handlerMapper");
+        then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isNull();
+        then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isNull();
+    }
+    
+    @Test
+    public void mixed_handlers_set_for_ssl_or_web() throws Exception {
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        
+        handlers.put("/1/*", new RestrictedResourceHandler(new TestHandler(), null, null));
+        handlers.put("/2/*", new TestHandler());
+        
+        server.setHandlers(handlers);
+        
+        UriHttpRequestHandlerMapper mapper = 
+            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
+        then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isSameAs(handlers.get("/1/*"));
+        then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
+        
+        mapper = 
+            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getWebService(), "handlerMapper");
+        then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isNull();
+        then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
+    }
     
     // -------------------------------------------------------------------------
     

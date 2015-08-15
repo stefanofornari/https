@@ -17,9 +17,10 @@ package ste.web.http;
 
 import ste.web.http.handlers.FileHandler;
 import java.io.IOException;
+import java.util.HashMap;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -110,8 +111,8 @@ public abstract class BugFreeHttpServerBase {
     }
     
     protected void createServer() throws Exception {
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(DOCROOT));
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new FileHandler(DOCROOT));
         
         server = new HttpServer(configuration);
         server.setHandlers(handlers);

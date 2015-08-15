@@ -15,22 +15,18 @@
  */
 package ste.web.http;
 
+import java.util.HashMap;
 import java.util.List;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
-import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
-import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
-import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.PrintSessionHandler;
 
 /**
@@ -212,8 +208,8 @@ public class BugFreeHttpServerSession extends BugFreeHttpServerBase {
         configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
         createServer();
         
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new PrintSessionHandler());
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new PrintSessionHandler());
         server.setHandlers(handlers);
         
         server.start(); waitServerStartup();

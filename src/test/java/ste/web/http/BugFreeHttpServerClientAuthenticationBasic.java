@@ -18,26 +18,19 @@ package ste.web.http;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Base64;
+import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Test;
-import static ste.web.http.BugFreeHttpServerBase.HOME;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
-import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
-import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
-import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
-import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
 
 /**
@@ -54,15 +47,15 @@ public class BugFreeHttpServerClientAuthenticationBasic extends BugFreeHttpServe
         createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_AUTH, "basic");
         
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(DOCROOT));
-        handlers.register("/auth/*", new BasicAuthHandler());
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new FileHandler(DOCROOT));
+        handlers.put("/auth/*", new BasicAuthHandler());
         
         server = new HttpServer(configuration);
         server.setHandlers(handlers);
         
-        index = new URL("https://localhost:" + server.getPort() + "/index.html");
-        auth = new URL("https://localhost:" + server.getPort() + "/auth/index.html");
+        index = new URL("https://localhost:" + server.getSSLPort() + "/index.html");
+        auth = new URL("https://localhost:" + server.getSSLPort() + "/auth/index.html");
     }
     
     @Test

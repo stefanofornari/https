@@ -125,11 +125,13 @@ public class BugFreeHttpServerStartupWithConfiguration extends BugFreeHttpServer
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         configuration.setProperty(CONFIG_HTTPS_PORT, "8080");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
-        then(new HttpServer(configuration).getPort()).isEqualTo(8080);
+        then(new HttpServer(configuration).getSSLPort()).isEqualTo(8080);
+        then(new HttpServer(configuration).getWebPort()).isEqualTo(8888);
         
         configuration.setProperty(CONFIG_HTTPS_PORT, "8181");
-        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
-        then(new HttpServer(configuration).getPort()).isEqualTo(8181);
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8787");
+        then(new HttpServer(configuration).getSSLPort()).isEqualTo(8181);
+        then(new HttpServer(configuration).getWebPort()).isEqualTo(8787);
     }
     
      @Test

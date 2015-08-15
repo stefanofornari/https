@@ -68,7 +68,7 @@ public class BugFreeHttpServerClientAuthenticationCert extends BugFreeHttpServer
         configuration.setProperty(CONFIG_HTTPS_AUTH, "cert");
         createServer();
         
-        url = new URL("https://localhost:" + server.getPort() + "/index.html");
+        url = new URL("https://localhost:" + server.getSSLPort() + "/index.html");
     }
     
     @Test

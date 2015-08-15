@@ -16,10 +16,12 @@
 package ste.web.http;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
@@ -124,8 +126,8 @@ public class BugFreeHttpServerStartupLog {
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         
         HttpServer s = new HttpServer(configuration);
-        UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
-        handlers.register("*", new FileHandler(root.getPath()));
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new FileHandler(root.getPath()));
 
         HttpServer server = new HttpServer(configuration);
         server.setHandlers(handlers);
