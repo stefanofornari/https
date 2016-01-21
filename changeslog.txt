@@ -1,3 +1,6 @@
+20160121
+- added the option to give a HttpProcessor in setHandlers
+
 20150815
 - added support for http
 - released v0.0.11

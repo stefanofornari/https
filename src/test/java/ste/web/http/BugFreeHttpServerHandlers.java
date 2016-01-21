@@ -21,6 +21,8 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.HttpProcessorBuilder;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
@@ -115,6 +117,24 @@ public class BugFreeHttpServerHandlers extends AbstractBugFreeHttpServer {
             (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getWebService(), "handlerMapper");
         then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isNull();
         then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
+    }
+    
+    @Test
+    public void setHandlers_with_null_processor_uses_default() throws Exception {
+        server.setHandlers(null, null);
+        
+        then(PrivateAccess.getInstanceValue(server.getSSLService(), "processor")).isNotNull();
+        then(PrivateAccess.getInstanceValue(server.getWebService(), "processor")).isNotNull();
+    }
+    
+    @Test
+    public void setHandlers_with_not_null_processor() throws Exception {
+        HttpProcessor p = HttpProcessorBuilder.create().build();
+        
+        server.setHandlers(null, p);
+        
+        then(PrivateAccess.getInstanceValue(server.getSSLService(), "processor")).isSameAs(p);
+        then(PrivateAccess.getInstanceValue(server.getWebService(), "processor")).isSameAs(p);
     }
     
     // -------------------------------------------------------------------------
