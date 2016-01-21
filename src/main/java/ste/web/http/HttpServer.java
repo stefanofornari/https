@@ -115,7 +115,7 @@ public class HttpServer {
             );
         }
 
-           sslPort = configPort("ssl");
+        sslPort = configPort("ssl");
         webPort = configPort("web");
         
         try {
@@ -216,16 +216,6 @@ public class HttpServer {
     public HttpSessionService getWebService() {
         return web;
     }
-    
-    /**
-     * @return the ssl sslPort
-     * 
-     * @deprecated use getSSLPort();
-     */
-    @Deprecated
-    public int getPort() {
-        return getSSLPort();
-    }
 
     public int getSSLPort() {
         return sslPort;
@@ -240,13 +230,29 @@ public class HttpServer {
     }
 
     /**
+     * If processor is null a default implementation is provided as follows:
+     * 
+     * <code>
+     * HttpProcessorBuilder.create()
+     *          .add(new ResponseDate())
+     *          .add(new ResponseServer())
+     *          .add(new ResponseContent())
+     *          .add(new ResponseConnControl()).build()
+     * </code>
+     * 
      * @param handlers the new handlers; if null, no handlers will be set - MAY BE NULL
+     * @param processor the HttpProcessor to use in the HttpSessionProcessors - MAY BE NULL
      */
-    public void setHandlers(HashMap<String, HttpRequestHandler> handlers) {
+    public void setHandlers(
+        final HashMap<String, HttpRequestHandler> handlers,
+        HttpProcessor processor
+    ) {
         long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
         
         // Set up the HTTP protocol processor
-        HttpProcessor httpproc = buildHttpProcessor();
+        if (processor == null) {
+            processor = buildDefaultHttpProcessor();
+        }
         
         // Set up request handlers end HTTP service
         if (handlers != null) {
@@ -262,14 +268,23 @@ public class HttpServer {
                 }
             }
             
-            ssl = new HttpSessionService(httpproc, sslMapper, sessionLifetime);
-            web = new HttpSessionService(httpproc, webMapper, sessionLifetime);
+            ssl = new HttpSessionService(processor, sslMapper, sessionLifetime);
+            web = new HttpSessionService(processor, webMapper, sessionLifetime);
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            ssl = new HttpSessionService(httpproc, registry, sessionLifetime);
-            web = new HttpSessionService(httpproc, registry, sessionLifetime);
+            ssl = new HttpSessionService(processor, registry, sessionLifetime);
+            web = new HttpSessionService(processor, registry, sessionLifetime);
         }
-    }    
+    }
+    
+    /**
+     * Equivalent to <code>setHandlers(handlers, null)</code>.
+     * 
+     * @param handlers the new handlers; if null, no handlers will be set - MAY BE NULL
+     */
+    public void setHandlers(HashMap<String, HttpRequestHandler> handlers) {
+        setHandlers(handlers, null);
+    }
     
     // --------------------------------------------------------- private methods
    
@@ -320,7 +335,7 @@ public class HttpServer {
         return context;
     }
 
-    private HttpProcessor buildHttpProcessor() {
+    private HttpProcessor buildDefaultHttpProcessor() {
         return HttpProcessorBuilder.create()
                 .add(new ResponseDate())
                 .add(new ResponseServer())
