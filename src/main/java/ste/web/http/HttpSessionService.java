@@ -35,7 +35,6 @@ import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.HttpService;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import ste.web.acl.User;
 
 /**
