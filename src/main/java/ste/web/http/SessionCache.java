@@ -93,7 +93,7 @@ class SessionCache extends HashMap<String, HttpSession> {
             }
             super.put(session.getId(), session);
         }
-        traceAccess(session.getId());
+        trackAccess(session.getId());
         
         return session;
     }
@@ -116,7 +116,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         }
     }
     
-    private void traceAccess(String id) {
+    private void trackAccess(String id) {
         lastAccess.put(id, System.currentTimeMillis());
     }
     

@@ -68,7 +68,7 @@ public class HttpSessionService extends HttpService {
     public void handleRequest(final HttpServerConnection c)
     throws HttpException, IOException {
         //
-        // TODO: server error handling (not related to IO or protocol
+        // TODO: server error handling (not related to IO or protocol)
         //
         super.handleRequest(c, new HttpSessionContext());
     }
@@ -80,7 +80,7 @@ public class HttpSessionService extends HttpService {
     throws HttpException, IOException {
         HttpSession session = selectSession(request, (HttpSessionContext)context);
         
-        response.addHeader(session.getHeader());
+        response.setHeader(session.getHeader());
         response.setEntity(createEmptyEntity());
         
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
@@ -104,9 +104,8 @@ public class HttpSessionService extends HttpService {
     private HttpSession selectSession(HttpRequest request, HttpSessionContext context) {
         String sessionId = null;
         for (Header h: request.getHeaders("Cookie")) {
-            HttpCookie cookie = HttpCookie.parse(h.getValue()).get(0);
-            if ("JSESSIONID".equals(cookie.getName())) {
-                sessionId = cookie.getValue();
+            sessionId = extractSessionId(h.getValue());
+            if (sessionId != null) {
                 break;
             }
         }
@@ -117,10 +116,21 @@ public class HttpSessionService extends HttpService {
         return session;
     }
     
+    private String extractSessionId(String cookies) {
+        int i = cookies.lastIndexOf("JSESSIONID=\"");
+        if (i>=0) {
+            int e = cookies.indexOf("\"", i+12);
+            if (e>0) {
+                return cookies.substring(i+12, e);
+            }
+        }
+        return null;
+    }
+    
     private void setPrincipal(HttpRequest request, HttpSessionContext context) {
         Header h = request.getFirstHeader(HttpHeaders.AUTHORIZATION);
         if (h != null) {
-            context.setPrincipal(userFromBasicHeader(h));
+            context.setPrincipal(userFromAuthotizationHeader(h));
         }
     }
     
@@ -131,8 +141,8 @@ public class HttpSessionService extends HttpService {
         
         return e;
     }
-    
-    private User userFromBasicHeader(final Header authorization) {
+
+    private User userFromAuthotizationHeader(final Header authorization) {
         Pair<String, String> cred = HttpUtils.parseBasicAuth(authorization);
         
         User user = null;
