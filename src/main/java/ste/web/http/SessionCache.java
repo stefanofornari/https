@@ -80,7 +80,16 @@ class SessionCache extends HashMap<String, HttpSession> {
     public void putAll(Map<? extends String, ? extends HttpSession> map) {
         throw new UnsupportedOperationException("putAll() is unsupported; use get(null) instead");
     }
-       
+    
+    /**
+     * Returns the session associated to the given id if found end not expired; 
+     * otherwise a new session is created.
+     * 
+     * @param id the session id - ANY VALUE
+     * 
+     * @return the session associated to the given id if found end not expired; 
+     * otherwise a new session is created.
+     */
     public synchronized HttpSession get(final String id) {
         HttpSession session = (HttpSession)super.get(id);
         
@@ -88,9 +97,6 @@ class SessionCache extends HashMap<String, HttpSession> {
         Long lastTS = lastAccess.get(id);
         if ((lastTS == null) || isExpired(lastTS) || (session == null)) {
             session = new HttpSession();
-            if (id != null) {
-                session.setId(id);
-            }
             super.put(session.getId(), session);
         }
         trackAccess(session.getId());

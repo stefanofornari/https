@@ -24,11 +24,12 @@ import org.junit.Test;
 
 /**
  * TODO: see cobertura report
+ * TODO: use of Clock
  */
 public class BugFreeSessionCache {
     
     @Test
-    public void constructurSetLifetime() {
+    public void constructur_set_lifetime() {
         SessionCache s = new SessionCache();
         then(s.getLifetime()).isEqualTo(SessionCache.DEFAULT_SESSION_LIFETIME);
         s = new SessionCache(100);
@@ -49,7 +50,7 @@ public class BugFreeSessionCache {
     }
     
     @Test
-    public void disablePutX() throws Exception {
+    public void disable_putXXX() throws Exception {
         //
         // get(null) creates new items and put them in the cache; we disable 
         // the use of put() and putAll() for now
@@ -72,7 +73,7 @@ public class BugFreeSessionCache {
     }
     
     @Test
-    public void doNotExpireUsedSession() throws Exception {
+    public void do_not_expire_used_session() throws Exception {
         final long TEST_LIFETIME = 250;
         SessionCache c = new SessionCache(TEST_LIFETIME);
         
@@ -87,7 +88,7 @@ public class BugFreeSessionCache {
     }
         
     @Test
-    public void expireUnusedSession() throws Exception {
+    public void expire_unused_session() throws Exception {
         final long TEST_LIFETIME = 50;
         SessionCache c = new SessionCache(TEST_LIFETIME);
         
@@ -102,7 +103,7 @@ public class BugFreeSessionCache {
     }
     
     @Test
-    public void purgeExpiredSessions() throws Exception {
+    public void purge_expired_sessions() throws Exception {
         SessionCache c = new SessionCache(75, 200);
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
         
@@ -119,17 +120,18 @@ public class BugFreeSessionCache {
         Thread.sleep(50);
         then(c.get(s1.getId())).isNotNull();
         then(c.get(s2.getId()).getAttribute("TEST2")).isNull();
-        then(lastAccess).hasSize(2);
+        then(lastAccess).hasSize(3); // one session has expired
         
         Thread.sleep(200); c.get(null); // triggering purge
         
         then(lastAccess)
+            .hasSize(1)
             .doesNotContainKey(s1.getId())
             .doesNotContainKey(s2.getId());
     }
     
     @Test
-    public void noExpiration() throws Exception {
+    public void no_expiration() throws Exception {
         SessionCache c = new SessionCache(0);
         HttpSession s = c.get(null);
         
@@ -143,7 +145,7 @@ public class BugFreeSessionCache {
     }
     
     @Test
-    public void newSessionWhenIdIsNull() throws Exception {
+    public void new_session_when_id_is_null() throws Exception {
         SessionCache c = new SessionCache(0);
         HttpSession s = c.get(null);
         
@@ -152,16 +154,17 @@ public class BugFreeSessionCache {
     }
     
     @Test
-    public void newSessionWhenIdIsNotFound() throws Exception {
+    public void new_session_when_id_is_not_found() throws Exception {
+        final String NOT_EXISTING_ID = "notexistingid";
         SessionCache c = new SessionCache(0);
-        HttpSession s = c.get("notexistingid");
+        HttpSession s = c.get(NOT_EXISTING_ID);
         
         then(s).isNotNull();
-        then(s.getId()).isNotNull();
+        then(s.getId()).isNotNull().isNotEqualTo(NOT_EXISTING_ID);
     }
     
     @Test
-    public void sessionIsNotAccessibleAnyMoreAfterExpiration() throws Exception {
+    public void session_is_not_accessible_any_more_after_expiration() throws Exception {
         SessionCache c = new SessionCache(50, 50);
         HttpSession s = c.get(null);
         

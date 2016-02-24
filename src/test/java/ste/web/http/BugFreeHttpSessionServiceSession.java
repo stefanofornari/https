@@ -15,8 +15,7 @@
  */
 package ste.web.http;
 
-import java.net.HttpCookie;
-import org.apache.http.HttpHeaders;
+import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.HttpCoreContext;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
@@ -61,29 +60,52 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
     }
     
     @Test
-    public void same_session_if_jsession_simple() throws Exception {
-        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+    public void no_jsession_if_jsession_simple() throws Exception {
+        BasicHttpResponse res1 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
             String.format("JSESSIONID=\"%s\"", s1.getId())
         );
-        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+        BasicHttpResponse res2 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res2, context);
         then(context.getSession().getId()).isEqualTo(s1.getId());
+        then(res2.getHeaders("Set-Cookie")).isEmpty();
     }
     
     @Test
-    public void same_session_if_jsession_with_other_cookies() throws Exception {
-        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+    public void no_jsession_if_jsession_with_other_cookies() throws Exception {
+        BasicHttpResponse res1 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
             String.format("one=1;JSESSIONID=\"%s\";two=2", s1.getId())
         );
-        service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
+        BasicHttpResponse res2 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res2, context);
         then(context.getSession().getId()).isEqualTo(s1.getId());
+        then(res2.getHeaders("Set-Cookie")).isEmpty();
+    }
+    
+    @Test
+    public void new_jsession_if_invalid_jsession() throws Exception {
+        BasicHttpResponse res1 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res1, context);
+        HttpSession s1 = context.getSession();
+        
+        TEST_REQUEST1.addHeader("Cookie", "one=1;JSESSIONID=\"123\";two=2");
+        BasicHttpResponse res2 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res2, context);
+        HttpSession s2 = context.getSession();
+        then(s2).isNotNull();
+        then(s2.getId()).isNotEqualTo(s1.getId());
+        then(res2.getHeaders("Set-Cookie")).hasSize(1);
+        then(res2.getHeaders("Set-Cookie")[0].getValue())
+            .isEqualTo(String.format(JSESSION_FORMAT, s2.getId()));
     }
     
 }

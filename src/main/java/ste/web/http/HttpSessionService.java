@@ -78,9 +78,15 @@ public class HttpSessionService extends HttpService {
     @Override
     protected void doService(HttpRequest request, HttpResponse response, HttpContext context) 
     throws HttpException, IOException {
-        HttpSession session = selectSession(request, (HttpSessionContext)context);
+        String sessionId = sessionId(request, (HttpSessionContext)context);
         
-        response.setHeader(session.getHeader());
+        HttpSession session = sessions.get(sessionId);
+        ((HttpSessionContext)context).setSession(session);
+        
+        if (!session.getId().equals(sessionId)) {
+            response.setHeader(session.getHeader());
+        }
+
         response.setEntity(createEmptyEntity());
         
         HttpInetConnection connection = (HttpInetConnection)context.getAttribute(HttpCoreContext.HTTP_CONNECTION);
@@ -101,19 +107,15 @@ public class HttpSessionService extends HttpService {
     
     // --------------------------------------------------------- private methods
     
-    private HttpSession selectSession(HttpRequest request, HttpSessionContext context) {
-        String sessionId = null;
+    private String sessionId(HttpRequest request, HttpSessionContext context) {
         for (Header h: request.getHeaders("Cookie")) {
-            sessionId = extractSessionId(h.getValue());
+            String sessionId = extractSessionId(h.getValue());
             if (sessionId != null) {
-                break;
+                return sessionId;
             }
         }
         
-        HttpSession session = sessions.get(sessionId);
-        context.setSession(session);
-        
-        return session;
+        return null;
     }
     
     private String extractSessionId(String cookies) {

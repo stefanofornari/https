@@ -178,7 +178,7 @@ public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
         
         //
         // If we hit the same URL with the same client after the expiration 
-        // time, the session id shall be reused but with new values
+        // time, the session id shall not be reused
         //
         Thread.sleep(1000);
         response = httpclient.execute(httpget);
@@ -195,7 +195,7 @@ public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
                 break;
             }
         }
-        then(newSessionId).isEqualTo(sessionId);
+        then(newSessionId).isNotEqualTo(sessionId);
         then(EntityUtils.toString(response.getEntity()))
             .contains(String.format("{id: %s}", newSessionId))
             .contains("{counter: 1}");
