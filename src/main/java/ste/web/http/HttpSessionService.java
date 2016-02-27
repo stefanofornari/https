@@ -119,12 +119,14 @@ public class HttpSessionService extends HttpService {
     }
     
     private String extractSessionId(String cookies) {
-        int i = cookies.lastIndexOf("JSESSIONID=\"");
+        final String DELIMITER = "JSESSIONID=";
+        final int DELIMITER_SIZE = DELIMITER.length();
+        
+        int i = cookies.lastIndexOf(DELIMITER);
         if (i>=0) {
-            int e = cookies.indexOf("\"", i+12);
-            if (e>0) {
-                return cookies.substring(i+12, e);
-            }
+            int e = cookies.indexOf(";", i+DELIMITER_SIZE);
+            return (e >= 0) ? cookies.substring(i+DELIMITER_SIZE, e).replace("\"", "") 
+                            : cookies.substring(i+DELIMITER_SIZE).replace("\"", "");
         }
         return null;
     }

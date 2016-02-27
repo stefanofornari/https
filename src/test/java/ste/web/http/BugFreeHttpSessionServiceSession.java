@@ -67,6 +67,22 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
+            String.format("JSESSIONID=%s", s1.getId())
+        );
+        BasicHttpResponse res2 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res2, context);
+        then(context.getSession().getId()).isEqualTo(s1.getId());
+        then(res2.getHeaders("Set-Cookie")).isEmpty();
+    }
+    
+    @Test
+    public void skip_quotes_in_jsessionid() throws Exception {
+        BasicHttpResponse res1 = HttpUtils.getBasicResponse();
+        service.doService(TEST_REQUEST1, res1, context);
+        HttpSession s1 = context.getSession();
+        
+        TEST_REQUEST1.addHeader(
+            "Cookie", 
             String.format("JSESSIONID=\"%s\"", s1.getId())
         );
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
@@ -83,7 +99,7 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
-            String.format("one=1;JSESSIONID=\"%s\";two=2", s1.getId())
+            String.format("one=1;JSESSIONID=%s;two=2", s1.getId())
         );
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
@@ -97,7 +113,7 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
-        TEST_REQUEST1.addHeader("Cookie", "one=1;JSESSIONID=\"123\";two=2");
+        TEST_REQUEST1.addHeader("Cookie", "one=1;JSESSIONID=123;two=2");
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
         HttpSession s2 = context.getSession();

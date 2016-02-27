@@ -1,3 +1,6 @@
+20160227
+- added support for authenticated sessions
+
 20160121
 - added the option to give a HttpProcessor in setHandlers
 
