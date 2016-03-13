@@ -1,3 +1,6 @@
+20160313
+- released v0.0.12
+
 20160227
 - added support for authenticated sessions
 
