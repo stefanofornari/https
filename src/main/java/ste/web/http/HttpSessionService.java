@@ -18,7 +18,6 @@ package ste.web.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.HttpCookie;
 import java.net.InetAddress;
 import java.util.logging.Logger;
 import org.apache.commons.lang3.tuple.Pair;
