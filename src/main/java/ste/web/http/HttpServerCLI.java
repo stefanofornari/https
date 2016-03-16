@@ -36,7 +36,7 @@ public class HttpServerCLI {
         
         System.setProperty("javax.net.debug", "ssl");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
-        System.setProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
+        System.setProperty("javax.net.ssl.trustStore", "src/test/conf/castore");
         System.setProperty("javax.net.ssl.trustStorePassword", "20150630");
         
         HttpServer server = new HttpServer(configuration);

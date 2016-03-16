@@ -302,7 +302,7 @@ public class HttpServer {
         //
         // TODO: handle the case the client does not send the certificate
         //
-        String keystoreFile = home + "/etc/keystore";
+        String keystoreFile = home + "/conf/keystore";
         KeyStore keystore = KeyStore.getInstance("jks");
         keystore.load(new FileInputStream(keystoreFile), sslPassword);
         

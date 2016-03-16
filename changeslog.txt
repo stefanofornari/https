@@ -1,3 +1,7 @@
+20160317
+- moved key stores to $home/conf
+- released v0.0.13
+
 20160313
 - released v0.0.12
 

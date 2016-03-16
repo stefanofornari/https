@@ -73,7 +73,7 @@ public class BugFreeHttpServerSSL {
     @Before
     public void setUp() {
         this.root = FOLDER.getRoot();
-        new File(root, "etc").mkdir();
+        new File(root, "conf").mkdir();
     }
 
     @Test
@@ -144,7 +144,7 @@ public class BugFreeHttpServerSSL {
             createServer(s);
             fail("if SSL is not correctly setup server instantiation shall fail");
         } catch (ConfigurationException x) {
-            then(x.getMessage()).contains("No such file or directory").contains("etc/keystore");
+            then(x.getMessage()).contains("No such file or directory").contains("conf/keystore");
         }
     }
 
@@ -159,7 +159,7 @@ public class BugFreeHttpServerSSL {
         } catch (ConfigurationException x) {
             then(x.getMessage())
                 .contains("missing server certificate")
-                .contains("etc/keystore")
+                .contains("conf/keystore")
                 .contains(HttpServer.CERT_ALIAS);
         }
     }
@@ -189,7 +189,7 @@ public class BugFreeHttpServerSSL {
         //
         // TODO: use Bouncy Castle ?
         //
-        FileOutputStream os = new FileOutputStream(root.getAbsolutePath() + "/etc/keystore");
+        FileOutputStream os = new FileOutputStream(root.getAbsolutePath() + "/conf/keystore");
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, password);
         

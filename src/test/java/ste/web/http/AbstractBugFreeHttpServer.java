@@ -56,7 +56,7 @@ public abstract class AbstractBugFreeHttpServer {
     
     @Rule
     public final ProvideSystemProperty TRUST_STORE_PROPERTY
-	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
+	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/conf/castore");
 
     @Rule
     public final ProvideSystemProperty TRUST_STORE_PWD_PROPERTY

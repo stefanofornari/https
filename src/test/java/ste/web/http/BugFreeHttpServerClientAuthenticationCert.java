@@ -50,7 +50,7 @@ public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHt
     
     @Rule
     public final ProvideSystemProperty CA_STORE_PROPERTY
-	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/etc/castore");
+	 = new ProvideSystemProperty("javax.net.ssl.trustStore", "src/test/conf/castore");
 
     @Rule
     public final ProvideSystemProperty CA_STORE_PWD_PROPERTY
@@ -106,7 +106,7 @@ public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHt
         //   localhost -> self signed and stored in castore too
         //
         KeyStore ks = KeyStore.getInstance("jks");
-        FileInputStream fis = new FileInputStream("src/test/etc/client.jks");
+        FileInputStream fis = new FileInputStream("src/test/conf/client.jks");
         ks.load(fis, SSL_PASSWORD.toCharArray());
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, SSL_PASSWORD.toCharArray());
