@@ -28,7 +28,7 @@ import org.junit.Test;
  */
 public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceBase {
     
-    public final String JSESSION_FORMAT = "JSESSIONID=\"%s\";$Path=\"/\"";
+    public final String JSESSION_FORMAT = "JSESSIONID=%s; Path=/; Secure";
     
     HttpSessionContext context = null;
     

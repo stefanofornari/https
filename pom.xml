@@ -9,7 +9,10 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.3.2</version>
+            <!--
+               ATTENTION! latest version (4.4.5) is broken, stick to 4.3.3
+            -->
+            <version>4.3.3</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -50,7 +53,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.4-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
