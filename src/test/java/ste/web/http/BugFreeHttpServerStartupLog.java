@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.HttpRequestHandler;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.assertj.core.api.Condition;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +45,7 @@ import ste.xtest.logging.ListLogHandler;
  */
 public class BugFreeHttpServerStartupLog extends BugFree {
     private static final String MSG_PORT_BINDING_FAILURE =
-        "unable to start the server because it was not possible to bind port %d (address already in use)";
+        "unable to start the server because it was not possible to bind port %d";
     
     private final Logger LOG = Logger.getLogger(HttpServer.LOG_SERVER);
         
@@ -84,9 +85,18 @@ public class BugFreeHttpServerStartupLog extends BugFree {
         }
         
         then(server2.isRunning()).isFalse();
-        then(h.getMessages()).contains(
-            String.format(MSG_PORT_BINDING_FAILURE, 8400)
-        );
+        
+        //
+        // we need to check each value beacuse the error message may be different
+        // with different platforms/jdks
+        //
+        boolean res = false;
+        for (String msg: h.getMessages()) {
+            if (msg.startsWith(String.format(MSG_PORT_BINDING_FAILURE, 8400))) {
+                res = true; break;
+            }
+        }
+        then(res).isTrue();
     }
     
     @Test
@@ -107,9 +117,13 @@ public class BugFreeHttpServerStartupLog extends BugFree {
         }
         
         then(server2.isRunning()).isFalse();
-        then(h.getMessages()).contains(
-            String.format(MSG_PORT_BINDING_FAILURE, 8800)
-        );
+        boolean res = false;
+        for (String msg: h.getMessages()) {
+            if (msg.startsWith(String.format(MSG_PORT_BINDING_FAILURE, 8800))) {
+                res = true; break;
+            }
+        }
+        then(res).isTrue();
     }
     
     // --------------------------------------------------------- private methods
