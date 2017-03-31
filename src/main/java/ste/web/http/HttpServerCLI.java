@@ -15,36 +15,36 @@
  */
 package ste.web.http;
 
-import java.util.HashMap;
+import java.io.File;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static ste.web.http.Constants.*;
-import ste.web.http.handlers.FileHandler;
 
 /**
  *
  * @author ste
  */
 public class HttpServerCLI {
+    private static HttpApiServer SERVER;
+    
     public static void main(String[] args) throws Exception {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.addProperty(CONFIG_HTTPS_ROOT, "src/test");
-        configuration.addProperty(CONFIG_HTTPS_WEBROOT, "src/test/docroot");
-        configuration.addProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.addProperty(CONFIG_HTTPS_ROOT, new File(".").getAbsolutePath());
+        configuration.addProperty(CONFIG_HTTPS_WEBROOT, new File("docroot").getAbsolutePath());
+        configuration.addProperty(CONFIG_HTTPS_PORT, "8484");
+        configuration.addProperty(CONFIG_HTTPS_WEB_PORT, "8400");
         configuration.addProperty(CONFIG_SSL_PASSWORD, "20150630");
         
         System.setProperty("javax.net.debug", "ssl");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
-        System.setProperty("javax.net.ssl.trustStore", "src/test/conf/castore");
+        System.setProperty("javax.net.ssl.trustStore", "conf/castore");
         System.setProperty("javax.net.ssl.trustStorePassword", "20150630");
         
-        HttpServer server = new HttpServer(configuration);
+        SERVER = new HttpApiServer(configuration);
         
-        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
-        handlers.put("*", new FileHandler("src/test/docroot"));
-        server.setHandlers(handlers);
-        
-        server.start();
+        //server.start();
+    }
+    
+    public static HttpApiServer getServer() {
+        return SERVER;
     }
 }
