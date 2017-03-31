@@ -24,7 +24,6 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpProcessorBuilder;
 import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.protocol.HttpRequestHandlerMapper;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Rule;
@@ -48,20 +47,14 @@ public class BugFreeHttpServerHandlers extends AbstractBugFreeHttpServer {
     public void set_default_handlers() throws Exception {
         server.setHandlers(null);
         
-        //
-        // Not very nice because it may break if apache HttpServer changes the
-        // internal implementation, but good enough for now...
-        //
-        HttpRequestHandlerMapper handlers = 
-            (HttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
-        
-        then(handlers).isNotNull();
+        then(server.getWebHandlers()).isNotNull().isInstanceOf(UriHttpRequestHandlerMapper.class);
+        then(server.getSSLHandlers()).isNotNull().isInstanceOf(UriHttpRequestHandlerMapper.class);
     }
         
     @Test
     public void not_restricted_handlers_set_for_both_ssl_and_web() throws Exception {
         server.setHandlers(null);
-        then(PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper")).isNotNull();
+        then(server.getSSLHandlers()).isNotNull();
         
         //
         // Not very nice because it may break if apache HttpServer changes the
@@ -73,8 +66,7 @@ public class BugFreeHttpServerHandlers extends AbstractBugFreeHttpServer {
         
         server.setHandlers(handlers);
         
-        UriHttpRequestHandlerMapper mapper = 
-            (UriHttpRequestHandlerMapper)PrivateAccess.getInstanceValue(server.getSSLService(), "handlerMapper");
+        UriHttpRequestHandlerMapper mapper = (UriHttpRequestHandlerMapper)server.getSSLHandlers();
         then(mapper.lookup(HttpUtils.getSimpleGet("/1/something"))).isSameAs(handlers.get("/1/*"));
         then(mapper.lookup(HttpUtils.getSimpleGet("/2/something"))).isSameAs(handlers.get("/2/*"));
     }

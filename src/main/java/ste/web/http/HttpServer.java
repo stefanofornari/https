@@ -57,6 +57,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.protocol.HttpRequestHandler;
+import org.apache.http.protocol.HttpRequestHandlerMapper;
 import static ste.web.http.Constants.*;
 import ste.web.http.handlers.RestrictedResourceHandler;
 
@@ -83,6 +84,9 @@ public class HttpServer {
     private RequestListenerThread listenerThread, webListenerThread;
     private ClientAuthentication authentication;
     private Configuration configuration;
+    
+    UriHttpRequestHandlerMapper sslMapper;
+    UriHttpRequestHandlerMapper webMapper;
 
     /**
      * Creates a HTTPS server given the a configuration object. The following 
@@ -256,8 +260,8 @@ public class HttpServer {
         
         // Set up request handlers end HTTP service
         if (handlers != null) {
-            UriHttpRequestHandlerMapper sslMapper = new UriHttpRequestHandlerMapper();
-            UriHttpRequestHandlerMapper webMapper = new UriHttpRequestHandlerMapper();
+            sslMapper = new UriHttpRequestHandlerMapper();
+            webMapper = new UriHttpRequestHandlerMapper();
             
             for (String pattern: handlers.keySet()) {
                 HttpRequestHandler handler = handlers.get(pattern);
@@ -284,6 +288,18 @@ public class HttpServer {
      */
     public void setHandlers(HashMap<String, HttpRequestHandler> handlers) {
         setHandlers(handlers, null);
+    }
+    
+    public HttpRequestHandlerMapper getWebHandlers() {
+        return this.webMapper;
+    }
+    
+    public HttpRequestHandlerMapper getSSLHandlers() {
+        return this.sslMapper;
+    }
+    
+    public Configuration getConfiguration() {
+        return configuration;
     }
     
     // --------------------------------------------------------- private methods
