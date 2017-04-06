@@ -16,11 +16,14 @@
 package ste.web.http;
 
 import java.lang.reflect.Method;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.HashMap;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
+import ste.xtest.time.FixedClock;
 
 /**
  * TODO: see cobertura report
@@ -74,14 +77,15 @@ public class BugFreeSessionCache {
     
     @Test
     public void do_not_expire_used_session() throws Exception {
+        final FixedClock CLOCK = new FixedClock();
         final long TEST_LIFETIME = 250;
-        SessionCache c = new SessionCache(TEST_LIFETIME);
+        
+        SessionCache c = createSession(CLOCK, TEST_LIFETIME);
         
         HttpSession s = c.get(null);
         
-        long ts = System.currentTimeMillis();
-        while (System.currentTimeMillis()-ts <= TEST_LIFETIME) {
-            Thread.sleep(50);
+        for(int i=0; i<10; ++i) {
+            CLOCK.millis += i;
             c.get(s.getId());
         }
         then(c.get(s.getId()).getId()).isEqualTo(s.getId()); // still the same
@@ -89,12 +93,15 @@ public class BugFreeSessionCache {
         
     @Test
     public void expire_unused_session() throws Exception {
+        final FixedClock CLOCK = new FixedClock();
         final long TEST_LIFETIME = 50;
-        SessionCache c = new SessionCache(TEST_LIFETIME);
+        
+        SessionCache c = createSession(CLOCK, TEST_LIFETIME);
         
         HttpSession s = c.get(null); s.setAttribute("TEST", "test");
         
-        Thread.sleep(75);
+        CLOCK.millis += 75;
+        
         //
         // When expired, I still get a session with same id, but values will be
         // gone
@@ -103,26 +110,29 @@ public class BugFreeSessionCache {
     }
     
     @Test
+    @SuppressWarnings("unchecked")
     public void purge_expired_sessions() throws Exception {
-        SessionCache c = new SessionCache(75, 200);
+        final FixedClock CLOCK = new FixedClock();
+        
+        SessionCache c = createSession(CLOCK, 75, 200);
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
         
-        HttpSession s1 = c.get(null); s1.setAttribute("TEST1", "test1"); Thread.sleep(25);
-        HttpSession s2 = c.get(null); s1.setAttribute("TEST2", "test2"); Thread.sleep(25);
+        HttpSession s1 = c.get(null); s1.setAttribute("TEST1", "test1"); CLOCK.millis += 25;
+        HttpSession s2 = c.get(null); s1.setAttribute("TEST2", "test2"); CLOCK.millis += 25;
         
         //
         // Before a session expires, I get it; once expired I get a new session,
-        // but lastAccess still contains it; after purgetime lastAccess shall be
-        // empty
+        // but lastAccess still contains it; after purgetime() lastAccess shall 
+        // be empty
         //
         then(c.get(s1.getId())).isNotNull();
         then(lastAccess).hasSize(2);
-        Thread.sleep(50);
+        CLOCK.millis += 55;
         then(c.get(s1.getId())).isNotNull();
         then(c.get(s2.getId()).getAttribute("TEST2")).isNull();
         then(lastAccess).hasSize(3); // one session has expired
         
-        Thread.sleep(200); c.get(null); // triggering purge
+        CLOCK.millis += 200; c.get(null); // triggering purge
         
         then(lastAccess)
             .hasSize(1)
@@ -165,10 +175,12 @@ public class BugFreeSessionCache {
     
     @Test
     public void session_is_not_accessible_any_more_after_expiration() throws Exception {
-        SessionCache c = new SessionCache(50, 50);
+        final FixedClock CLOCK = new FixedClock();
+
+        SessionCache c = createSession(CLOCK, 50, 50);
         HttpSession s = c.get(null);
         
-        Thread.sleep(75); // the session shall be expired now
+        CLOCK.millis += 75; // the session shall be expired now
         c.get(null); // to trigger clean up
         
         try {
@@ -177,6 +189,22 @@ public class BugFreeSessionCache {
         } catch (IllegalStateException x) {
             then(x.getMessage()).contains(s.getId()).contains("expired");
         }
+    }
+    
+    // --------------------------------------------------------- private methods
+    
+    private SessionCache createSession(Clock clock, long lifetime) throws Exception {
+        SessionCache c = new SessionCache(lifetime);
+        setInstanceValue(c, "clock", clock);
+        
+        return c;
+    }
+    
+    private SessionCache createSession(Clock clock, long lifetime, long purgetime) throws Exception {
+        SessionCache c = new SessionCache(lifetime, purgetime);
+        setInstanceValue(c, "clock", clock);
+        
+        return c;
     }
     
 }

@@ -15,6 +15,7 @@
  */
 package ste.web.http;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +27,10 @@ import java.util.Map;
  * 
  */
 class SessionCache extends HashMap<String, HttpSession> {
+    //
+    // making time predictable...
+    //
+    private Clock clock = Clock.systemDefaultZone();
     
     public static final long DEFAULT_SESSION_LIFETIME = 1000*60*15; // 15 min
     public static final long DEFAULT_SESSION_PURGETIME = 1000*5; // 5 seconds
@@ -34,7 +39,6 @@ class SessionCache extends HashMap<String, HttpSession> {
     
     private final long lifetime, purgetime;
     private long lastPurge;
-    
     
     /**
      * Creates the session cache with default session lifetime and purgetime
@@ -107,7 +111,7 @@ class SessionCache extends HashMap<String, HttpSession> {
     // --------------------------------------------------------- private methods
     
     protected boolean isExpired(Long lastTS) {
-        long ts = System.currentTimeMillis();
+        long ts = clock.millis();
         return (lifetime != 0) && (ts-lastTS > lifetime);
     }
     
@@ -123,7 +127,7 @@ class SessionCache extends HashMap<String, HttpSession> {
     }
     
     private void trackAccess(String id) {
-        lastAccess.put(id, System.currentTimeMillis());
+        lastAccess.put(id, clock.millis());
     }
     
     @SuppressWarnings("unchecked")
@@ -132,7 +136,7 @@ class SessionCache extends HashMap<String, HttpSession> {
             return;
         }
         
-        long ts = System.currentTimeMillis();
+        long ts = clock.millis();
         if (ts-lastPurge <= purgetime) {
             return;
         }
