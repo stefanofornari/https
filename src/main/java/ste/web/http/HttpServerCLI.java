@@ -33,14 +33,16 @@ public class HttpServerCLI {
         configuration.addProperty(CONFIG_HTTPS_WEBROOT, new File("docroot").getAbsolutePath());
         configuration.addProperty(CONFIG_HTTPS_PORT, "8484");
         configuration.addProperty(CONFIG_HTTPS_WEB_PORT, "8400");
-        configuration.addProperty(CONFIG_SSL_PASSWORD, "20150630");
         
-        configuration.load(new File("conf/server.properties"));
+        configuration.load(new File("conf/https.properties"));
         
         //System.setProperty("javax.net.debug", "ssl");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
         System.setProperty("javax.net.ssl.trustStore", "conf/keystore");
-        System.setProperty("javax.net.ssl.trustStorePassword", "20150630");
+        System.setProperty(
+            "javax.net.ssl.trustStorePassword",
+            configuration.getString(CONFIG_SSL_PASSWORD)
+        );
         
         SERVER = new HttpApiServer(configuration);
         

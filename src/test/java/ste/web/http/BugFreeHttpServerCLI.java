@@ -18,6 +18,7 @@ package ste.web.http;
 import java.io.File;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -29,6 +30,7 @@ import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
+import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 
 /**
  *
@@ -87,7 +89,7 @@ public class BugFreeHttpServerCLI {
     
     @Test
     public void error_if_missing_configuration_file() throws Exception {
-        File conf = new File(TESTDIR.getRoot(), "conf/server.properties");
+        File conf = new File(TESTDIR.getRoot(), "conf/https.properties");
         conf.delete();
         
         try {
@@ -97,6 +99,38 @@ public class BugFreeHttpServerCLI {
             then(x).hasMessageContaining("Unable to load the configuration")
                    .hasMessageContaining(conf.getAbsolutePath());
         }
+    }
+    
+    @Test
+    public void read_key_store_password() throws Exception {
+        File conf = new File(TESTDIR.getRoot(), "conf/https.properties");
+        
+        PropertiesConfiguration c = new PropertiesConfiguration(conf);
+        
+        //
+        // Set the trustStorePassword property to an arbitrary value (with the 
+        // additional side effect of making the server abort so that main() 
+        // exits
+        //
+        c.setProperty(CONFIG_SSL_PASSWORD, "pass1");
+        c.save();
+        try {
+            HttpServerCLI.main(new String[0]);
+        } catch (ConfigurationException x) {
+            then(x).hasMessageContaining("Keystore was tampered");
+        }
+        then(System.getProperty("javax.net.ssl.trustStorePassword")).
+            isEqualTo("pass1");
+        
+        c.setProperty(CONFIG_SSL_PASSWORD, "pass2");
+        c.save();
+        try {
+            HttpServerCLI.main(new String[0]);
+        } catch (ConfigurationException x) {
+            then(x).hasMessageContaining("Keystore was tampered");
+        }
+        then(System.getProperty("javax.net.ssl.trustStorePassword")).
+            isEqualTo("pass2");
     }
     
     // --------------------------------------------------------- private methods
