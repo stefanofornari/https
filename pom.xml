@@ -9,11 +9,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <!--
-               ATTENTION! latest version (4.4.5) is broken, stick to 4.3.3
-            -->
-            <version>4.3.3</version>
-            <!--version>4.4.6</version-->
+            <version>4.4.6</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -38,7 +34,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.2.5</version>
+            <version>4.5.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -53,17 +49,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>ste.web</groupId>
-            <artifactId>webtoolkitlib</artifactId>
-            <version>1.7.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
@@ -71,7 +56,7 @@
         <dependency>
             <groupId>ste.test</groupId>
             <artifactId>xtest</artifactId>
-            <version>1.9.2</version>
+            <version>1.16.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -79,6 +64,11 @@
             <artifactId>commons-configuration</artifactId>
             <version>1.10</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>ste.web</groupId>
+            <artifactId>webtoolkitlib</artifactId>
+            <version>1.7.0</version>
         </dependency>
     </dependencies>
     
