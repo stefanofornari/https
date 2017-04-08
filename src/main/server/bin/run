@@ -25,9 +25,9 @@ cd "$home"
 #
 # Default configuration (use conf/serverone.conf to customize)
 #
-JAVA_OPTS=
+JAVA_OPTS="-Duser.home=$home -Duser.dir=$home"
 #JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=1044"
-#LOG_OPTS="-Djava.util.logging.config.file=$home/etc/logging.properties"
+LOG_OPTS="-Djava.util.logging.config.file=$home/conf/logging.properties"
 SERVICE_USER_ID=pi
 CURRENT_USER_ID=$(id -u -n)
 if [ $CURRENT_USER_ID = "root" ]
@@ -44,5 +44,5 @@ load_config $scriptname
 
 #echo "${pom.name} v${pom.version} as $SERVICE_USER_ID"
 exec 2>&1
-exec $uidcmd $javacmd $JAVA_OPTS ste.web.http.HttpServerCLI $*
+exec $uidcmd $javacmd $JAVA_OPTS $LOG_OPTS ste.web.http.HttpServerCLI $*
 

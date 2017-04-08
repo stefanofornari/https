@@ -37,8 +37,13 @@
             <outputDirectory>conf</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>src/main/server/docroot</directory>
+            <directory>src/main/webapp</directory>
             <outputDirectory>docroot</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/server/logs</directory>
+            <outputDirectory>logs</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
