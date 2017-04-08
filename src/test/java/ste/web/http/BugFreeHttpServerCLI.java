@@ -17,7 +17,9 @@ package ste.web.http;
 
 import java.io.File;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,9 +54,8 @@ public class BugFreeHttpServerCLI {
     
     @Test
     public void start_with_default_parameters() throws Exception {
-        HttpServerCLI.main(new String[0]);
+        HttpApiServer server = createAndStartServer();
         
-        HttpApiServer server = HttpServerCLI.getServer();
         then(server).isNotNull();
         
         final String ROOT = TESTDIR.getRoot().getAbsolutePath();
@@ -64,6 +65,63 @@ public class BugFreeHttpServerCLI {
         then(c.getString(CONFIG_HTTPS_WEBROOT)).isEqualTo(new File(ROOT, "docroot").getAbsolutePath());
         then(c.getInt(CONFIG_HTTPS_PORT)).isEqualTo(8484);
         then(c.getInt(CONFIG_HTTPS_WEB_PORT)).isEqualTo(8400);
+    }
+    
+    @Test
+    public void server_runs_until_closed() throws Exception {
+        HttpApiServer server = createAndStartServer();
+                
+        //
+        // Now the server should be started...
+        //
+        
+        then(server.isRunning()).isTrue();
+        Thread.sleep(250);
+        then(server.isRunning()).isTrue();
+        Thread.sleep(250);
+        
+        server.stop();
+        Thread.sleep(250);
+        then(server.isRunning()).isFalse();
+    }
+    
+    @Test
+    public void error_if_missing_configuration_file() throws Exception {
+        File conf = new File(TESTDIR.getRoot(), "conf/server.properties");
+        conf.delete();
+        
+        try {
+            HttpServerCLI.main(new String[0]);
+            fail("missing check for configuration file");
+        } catch (ConfigurationException x) {
+            then(x).hasMessageContaining("Unable to load the configuration")
+                   .hasMessageContaining(conf.getAbsolutePath());
+        }
+    }
+    
+    // --------------------------------------------------------- private methods
+    
+    private HttpApiServer createAndStartServer() throws Exception {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    HttpServerCLI.main(new String[0]);
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+            }         
+        }).start();
+        
+        HttpApiServer server = null;
+        int i = 0;
+        while ((server = HttpServerCLI.getServer()) == null && (++i<10)) {
+            System.out.println("attendere prego... ");
+            Thread.sleep(500);
+        }
+        
+        System.out.println("server: " + server);
+        return server;
     }
             
 }

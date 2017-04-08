@@ -21,27 +21,33 @@ import static ste.web.http.Constants.*;
 
 /**
  *
- * @author ste
+ * @TODO set ssl configuration in a configuration file... 
  */
 public class HttpServerCLI {
     private static HttpApiServer SERVER;
     
     public static void main(String[] args) throws Exception {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
+        
         configuration.addProperty(CONFIG_HTTPS_ROOT, new File(".").getAbsolutePath());
         configuration.addProperty(CONFIG_HTTPS_WEBROOT, new File("docroot").getAbsolutePath());
         configuration.addProperty(CONFIG_HTTPS_PORT, "8484");
         configuration.addProperty(CONFIG_HTTPS_WEB_PORT, "8400");
         configuration.addProperty(CONFIG_SSL_PASSWORD, "20150630");
         
-        System.setProperty("javax.net.debug", "ssl");
+        configuration.load(new File("conf/server.properties"));
+        
+        //System.setProperty("javax.net.debug", "ssl");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
-        System.setProperty("javax.net.ssl.trustStore", "conf/castore");
+        System.setProperty("javax.net.ssl.trustStore", "conf/keystore");
         System.setProperty("javax.net.ssl.trustStorePassword", "20150630");
         
         SERVER = new HttpApiServer(configuration);
         
-        //server.start();
+        SERVER.start();
+        do {
+            Thread.sleep(250);
+        } while (SERVER.isRunning());
     }
     
     public static HttpApiServer getServer() {
