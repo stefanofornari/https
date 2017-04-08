@@ -10,4 +10,11 @@
                 <skipTests>true</skipTests>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-dist</actionName>
+            <displayName>dist</displayName>
+            <goals>
+                <goal>assembly:assembly</goal>
+            </goals>
+        </action>
     </actions>
