@@ -9,7 +9,10 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.4.6</version>
+            <!--
+               ATTENTION! latest version (4.4.6) is broken, stick to 4.3.3
+            -->
+            <version>4.3.3</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -28,8 +31,9 @@
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-rules</artifactId>
-            <version>1.6.0</version>
+            <version>1.16.1</version>
             <scope>test</scope>
+            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -56,7 +60,7 @@
         <dependency>
             <groupId>ste.test</groupId>
             <artifactId>xtest</artifactId>
-            <version>1.16.3</version>
+            <version>1.16.4-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -69,6 +73,12 @@
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
             <version>1.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+            <version>4.8</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
     
