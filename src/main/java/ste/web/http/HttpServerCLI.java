@@ -26,7 +26,13 @@ import static ste.web.http.Constants.*;
 public class HttpServerCLI {
     private static HttpApiServer SERVER;
     
-    public static void main(String[] args) throws Exception {
+    /**
+     *
+     * @param args
+     * 
+     * @throws Exception
+     */
+    public static void main(String... args) throws Exception {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         
         configuration.addProperty(CONFIG_HTTPS_ROOT, new File(".").getAbsolutePath());
