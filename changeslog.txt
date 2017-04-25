@@ -1,3 +1,7 @@
+20170425
+- added a command line tool to initialize a new keystore
+- added bsh command getconf to get the configuration object from HttpServerCLI.getServer()
+
 20160317
 - moved key stores to $home/conf
 - released v0.0.13
