@@ -1,0 +1,8 @@
+#!/bin/sh
+
+#
+# Copyright Stefano Fornari (C) 2015. All rights reserved.
+#
+
+$(cd $(dirname $0) && pwd)/launch ste.web.tools.KeystoreCLI "$@"
+
