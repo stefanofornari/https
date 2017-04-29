@@ -22,7 +22,6 @@ import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ClearSystemProperties;
 import org.junit.rules.TemporaryFolder;
 import ste.web.http.HttpServerCLI;
 import ste.web.http.HttpSessionContext;
