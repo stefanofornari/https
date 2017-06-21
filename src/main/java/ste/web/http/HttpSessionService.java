@@ -108,25 +108,12 @@ public class HttpSessionService extends HttpService {
     
     private String sessionId(HttpRequest request, HttpSessionContext context) {
         for (Header h: request.getHeaders("Cookie")) {
-            String sessionId = extractSessionId(h.getValue());
+            String sessionId = HttpUtils.extractSessionId(h.getValue());
             if (sessionId != null) {
                 return sessionId;
             }
         }
         
-        return null;
-    }
-    
-    private String extractSessionId(String cookies) {
-        final String DELIMITER = "JSESSIONID=";
-        final int DELIMITER_SIZE = DELIMITER.length();
-        
-        int i = cookies.lastIndexOf(DELIMITER);
-        if (i>=0) {
-            int e = cookies.indexOf(";", i+DELIMITER_SIZE);
-            return (e >= 0) ? cookies.substring(i+DELIMITER_SIZE, e).replace("\"", "") 
-                            : cookies.substring(i+DELIMITER_SIZE).replace("\"", "");
-        }
         return null;
     }
     

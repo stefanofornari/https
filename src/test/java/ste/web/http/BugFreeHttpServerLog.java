@@ -36,7 +36,7 @@ import ste.xtest.reflect.PrivateAccess;
  * 
  * @author ste
  */
-public class BugFreeHttpServerLog extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerLog extends BaseBugFreeHttpServer {
     
     private static final String MSG_SOCKET_ACCEPT_FAILURE_SSL =
         "stopping to listen on port " + PORT + " (Socket closed)";
@@ -57,8 +57,8 @@ public class BugFreeHttpServerLog extends AbstractBugFreeHttpServer {
     
     @Before
     @Override
-    public void set_up() throws Exception {   
-        super.set_up();
+    public void before() throws Exception {   
+        super.before();
         //
         // Logger.getLogger() returns the same instance to multiple threads
         // therefore each method must add its own handler; we clean up the 
@@ -71,10 +71,10 @@ public class BugFreeHttpServerLog extends AbstractBugFreeHttpServer {
     }
     
     @After
+    @Override
     public void after() throws Exception {
-        if (server != null) {
-            server.stop(); waitServerShutdown();
-        }
+        super.after();
+        waitServerShutdown();
     }
 
     @Test

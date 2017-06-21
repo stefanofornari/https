@@ -37,13 +37,13 @@ import ste.web.http.handlers.FileHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerClientAuthenticationBasic extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerClientAuthenticationBasic extends BaseBugFreeHttpServer {
     
     private URL index = null, auth = null;
     
     @Before
     @Override
-    public void set_up() throws Exception {
+    public void before() throws Exception {
         createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_AUTH, "basic");
         
@@ -59,12 +59,8 @@ public class BugFreeHttpServerClientAuthenticationBasic extends AbstractBugFreeH
     }
     
     @Test
-    public void mssing_client_authentication_when_required_401() throws Exception {
+    public void missing_client_authentication_when_required_401() throws Exception {
         try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, null, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
             server.start(); waitServerStartup();
 
             then(
@@ -78,10 +74,6 @@ public class BugFreeHttpServerClientAuthenticationBasic extends AbstractBugFreeH
     @Test
     public void mssing_client_authentication_when_not_required_200() throws Exception {
         try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, null, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
             server.start(); waitServerStartup();
 
             then(
@@ -95,10 +87,6 @@ public class BugFreeHttpServerClientAuthenticationBasic extends AbstractBugFreeH
     @Test
     public void get_home_page_with_credentials() throws Exception {
         try {
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, null, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
             server.start(); waitServerStartup();
             
             HttpsURLConnection conn = (HttpsURLConnection)auth.openConnection();

@@ -15,8 +15,11 @@
  */
 package ste.web.http;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
@@ -25,6 +28,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
+import org.eclipse.jetty.http.HttpHeader;
 import org.junit.Test;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import ste.web.http.handlers.PrintSessionHandler;
@@ -33,56 +37,42 @@ import ste.web.http.handlers.PrintSessionHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
     @Test
     public void getSessionValuesInTheSameSession() throws Exception {
         createAndStartServer();
         
-        DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         
-        HttpResponse response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
+        
 
-        List<Cookie> cookies = httpclient.getCookieStore().getCookies();
-        then(cookies).isNotEmpty();
-        
-        String sessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                sessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
-        
+        String sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
         //
         // The output of HttpSessionHandler shall be:
         //
         // id: <the session id>
         // counter: <an autoincremented 1-based value>
         //
-        then(EntityUtils.toString(response.getEntity()))
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", sessionId))
             .contains("{counter: 1}");
         
-        //
-        // If we hit the same URL with the same client, we should get the same 
-        // session id, but the counter shall be incremented
-        //
-        response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
+        conn.disconnect();
         
-        String newSessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                newSessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
-        then(newSessionId).isEqualTo(sessionId);
-        then(EntityUtils.toString(response.getEntity()))
+        //
+        // If we hit the same URL with the same client, we should not return 
+        // a session id, but the counter shall be incremented
+        //
+        conn = (HttpURLConnection)url.openConnection();
+        conn.setRequestProperty("Cookie", "JSESSIONID=" + sessionId + ";");
+        
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
+        
+        String newSessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
+        then(newSessionId).isNull();
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", sessionId))
             .contains("{counter: 2}");
     }
@@ -91,23 +81,13 @@ public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
     public void getNewSession() throws Exception {
         createAndStartServer();
         
-        DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         
-        HttpResponse response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
 
-        List<Cookie> cookies = httpclient.getCookieStore().getCookies();
-        then(cookies).isNotEmpty();
-        
-        String sessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                sessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
+        String sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
+        then(sessionId).isNotNull();
         
         //
         // The output of HttpSessionHandler shall be:
@@ -115,56 +95,41 @@ public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
         // id: <the session id>
         // counter: <an autoincremented 1-based value>
         //
-        then(EntityUtils.toString(response.getEntity()))
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", sessionId))
             .contains("{counter: 1}");
+        
+        conn.disconnect();
         
         //
         // If we hit the same URL with the a new client, we should get a new
         // session id and the counter shall restart
         //
-        httpclient = new DefaultHttpClient(); 
-        response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
+        conn = (HttpURLConnection)url.openConnection();
         
-        cookies = httpclient.getCookieStore().getCookies();
-        then(cookies).isNotEmpty();
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
+
+        String newSessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
+        then(newSessionId).isNotNull();
         
-        String newSessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                newSessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
         then(newSessionId).isNotEqualTo(sessionId);
-        then(EntityUtils.toString(response.getEntity()))
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", newSessionId))
             .contains("{counter: 1}");
     }
-    
+
     @Test
     public void sessionExpiration() throws Exception {
         createAndStartServer();
         
-        DefaultHttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://localhost:" + PORT + "/index.html");
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         
-        HttpResponse response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
-
-        List<Cookie> cookies = httpclient.getCookieStore().getCookies();
-        then(cookies).isNotEmpty();
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
         
-        String sessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                sessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
+        String sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
+        then(sessionId).isNotNull();
+        
         
         //
         // The output of HttpSessionHandler shall be:
@@ -172,31 +137,24 @@ public class BugFreeHttpServerSession extends AbstractBugFreeHttpServer {
         // id: <the session id>
         // counter: <an autoincremented 1-based value>
         //
-        then(EntityUtils.toString(response.getEntity()))
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", sessionId))
             .contains("{counter: 1}");
+        
+        conn.disconnect();
         
         //
         // If we hit the same URL with the same client after the expiration 
         // time, the session id shall not be reused
         //
         Thread.sleep(1000);
-        response = httpclient.execute(httpget);
-        then(response.getStatusLine().getStatusCode())
-            .isEqualTo(HttpStatus.SC_OK);
         
-        cookies = httpclient.getCookieStore().getCookies();
-        then(cookies).isNotEmpty();
+        conn = (HttpURLConnection)url.openConnection();
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
         
-        String newSessionId = null;
-        for (Cookie c: cookies) {
-            if ("JSESSIONID".equals(c.getName())) {
-                newSessionId = c.getValue().replace("\"", "");
-                break;
-            }
-        }
+        String newSessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
         then(newSessionId).isNotEqualTo(sessionId);
-        then(EntityUtils.toString(response.getEntity()))
+        then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", newSessionId))
             .contains("{counter: 1}");
     }

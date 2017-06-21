@@ -30,7 +30,7 @@ import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
  *
  * @author ste
  */
-public class BugFreeHttpServerStartup extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerStartup extends BaseBugFreeHttpServer {
     
     @Rule
     public final ProvideSystemProperty SSL_PASSWORD

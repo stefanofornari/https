@@ -19,13 +19,9 @@ import java.io.File;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.FileUtils;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
@@ -34,25 +30,8 @@ import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 
 /**
  *
- * @author ste
  */
-public class BugFreeHttpServerCLI {
-    
-    @Rule
-    public final TemporaryFolder TESTDIR = new TemporaryFolder();
-    
-    @Before
-    public void before() throws Exception {
-        FileUtils.copyDirectory(new File("src/test/conf/"), TESTDIR.newFolder("conf"));
-        FileUtils.copyDirectory(new File("src/test/docroot/"), TESTDIR.newFolder("docroot"));
-        
-        System.setProperty(
-            "user.home", TESTDIR.getRoot().getAbsolutePath()
-        );
-        System.setProperty(
-            "user.dir", TESTDIR.getRoot().getAbsolutePath()
-        );
-    }
+public class BugFreeHttpServerCLI extends BaseBugFreeHttpServerCLI {
     
     @Test
     public void start_with_default_parameters() throws Exception {
@@ -131,31 +110,5 @@ public class BugFreeHttpServerCLI {
         }
         then(System.getProperty("javax.net.ssl.trustStorePassword")).
             isEqualTo("pass2");
-    }
-    
-    // --------------------------------------------------------- private methods
-    
-    private HttpApiServer createAndStartServer() throws Exception {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    HttpServerCLI.main(new String[0]);
-                } catch (Exception x) {
-                    x.printStackTrace();
-                }
-            }         
-        }).start();
-        
-        HttpApiServer server = null;
-        int i = 0;
-        while ((server = HttpServerCLI.getServer()) == null && (++i<10)) {
-            System.out.println("attendere prego... ");
-            Thread.sleep(500);
-        }
-        
-        System.out.println("server: " + server);
-        return server;
-    }
-            
+    }       
 }

@@ -30,12 +30,12 @@ import ste.web.http.handlers.RestrictedResourceHandler;
  * 
  * @author ste
  */
-public class BugFreeHttpApiServer extends AbstractBugFreeHttpServer {
+public class BugFreeHttpApiServer extends BaseBugFreeHttpServer {
     
     @Before
     @Override
-    public void set_up() throws Exception {   
-        super.set_up();
+    public void before() throws Exception {   
+        super.before();
 
     }
     

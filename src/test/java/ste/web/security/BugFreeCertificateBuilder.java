@@ -88,7 +88,7 @@ public class BugFreeCertificateBuilder {
         X509Certificate certificate = builder.build();
         then(certificate).isNotNull();
         then(certificate.getIssuerDN().getName()).isEqualToIgnoringCase(DN1);
-        then(certificate.getSigAlgName()).isEqualTo("SHA1withRSA");
+        then(certificate.getSigAlgName()).isEqualTo("SHA512withRSA");
         then(certificate.getType()).isEqualTo("X.509");
         then(certificate.getVersion()).isEqualTo(3);
         then(certificate.getNotBefore()).isEqualTo(builder.getValidFrom());

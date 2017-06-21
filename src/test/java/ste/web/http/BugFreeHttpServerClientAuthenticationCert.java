@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import static ste.web.http.AbstractBugFreeHttpServer.SSL_PASSWORD;
+import static ste.web.http.BaseBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
@@ -44,7 +44,7 @@ import ste.web.http.handlers.FileHandler;
  *
  * @author ste
  */
-public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerClientAuthenticationCert extends BaseBugFreeHttpServer {
     
     private URL url = null;
     
@@ -63,7 +63,7 @@ public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHt
     
     @Before
     @Override
-    public void set_up() throws Exception {
+    public void before() throws Exception {
         createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_AUTH, "cert");
         createServer();
@@ -74,11 +74,10 @@ public class BugFreeHttpServerClientAuthenticationCert extends AbstractBugFreeHt
     @Test
     public void mssing_client_authentication_when_required() throws Exception {
         try {
+            server.start(); waitServerStartup();
             SSLContext sc = SSLContext.getInstance("TLS");
             sc.init(null, null, null);
             HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-            server.start(); waitServerStartup();
 
             try {
                 ((HttpsURLConnection)url.openConnection()).getResponseCode();

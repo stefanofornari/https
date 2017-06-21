@@ -15,12 +15,12 @@
  */
 package ste.web.http;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Before;
@@ -38,7 +38,7 @@ import ste.xtest.logging.ListLogHandler;
  * 
  * @author ste
  */
-public class BugFreeHttpServerAccessLog extends AbstractBugFreeHttpServer {
+public class BugFreeHttpServerAccessLog extends BaseBugFreeHttpServer {
         
     private static final Logger LOG = Logger.getLogger(LOG_ACCESS);
     
@@ -53,11 +53,6 @@ public class BugFreeHttpServerAccessLog extends AbstractBugFreeHttpServer {
             LOG.removeHandler(h);
         }
     }
-    
-    @Before
-    public void set_up() throws Exception  {
-        super.set_up();
-    }
 
     @Test
     public void log_access_for_ok_requests() throws Exception {
@@ -67,25 +62,25 @@ public class BugFreeHttpServerAccessLog extends AbstractBugFreeHttpServer {
         
         server.start(); waitServerStartup();
         
-        DefaultHttpClient httpclient = new DefaultHttpClient();
-        
         // format: <remote address> <user> <session id> "<request> <protocol version>" <status>
         
-        HttpResponse res = httpclient.execute(new HttpGet("https://localhost:" + PORT + "/index.html"));
-        String sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        String sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
+        
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
         
-        EntityUtils.consume(res.getEntity());
-        res = httpclient.execute(new HttpGet("http://localhost:" + WEBPORT + "/index.html"));
-        sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        url = new URL("http://localhost:" + WEBPORT + "/index.html");
+        conn = (HttpURLConnection)url.openConnection();
+        sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index.html HTTP/1.1\" 200");
         
-        EntityUtils.consume(res.getEntity());
-        httpclient.execute(new HttpGet("https://localhost:" + PORT + "/index2.html"));
-        sessionId = httpclient.getCookieStore().getCookies().get(0).getValue().replaceAll("\"", "");
+        url = new URL("http://localhost:" + WEBPORT + "/index2.html");
+        conn = (HttpURLConnection)url.openConnection();
+        sessionId = HttpUtils.extractSessionId(conn.getHeaderField("Set-Cookie"));
         then(h.getMessages()).contains("127.0.0.1 - " + sessionId + " \"GET /index2.html HTTP/1.1\" 404");
     }
     
-    // ------------------------------------------------------- protected methods
-
+    // --------------------------------------------------------- private methods
+    
 }

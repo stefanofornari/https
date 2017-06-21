@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
-import static ste.web.http.AbstractBugFreeHttpServer.SSL_PASSWORD;
+import static ste.web.http.BaseBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
 import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
