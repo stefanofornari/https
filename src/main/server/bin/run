@@ -19,6 +19,7 @@ home=$(dirname "$scriptdir")
 #
 set_java
 set_classpath "$home/lib"
+set_classpath "$home/lib/ext"
 
 cd "$home"
 

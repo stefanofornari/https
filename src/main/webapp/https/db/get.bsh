@@ -1,0 +1,53 @@
+/*
+ * Copyright (C) 2018 Stefano Fornari.
+ * All Rights Reserved.  No use, copying or distribution of this
+ * work may be made except in accordance with a valid license
+ * agreement from Stefano Fornari.  This notice must be
+ * included on all copies, modifications and derivatives of this
+ * work.
+ *
+ * STEFANO FORNARI MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY
+ * OF THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT. STEFANO FORNARI SHALL NOT BE LIABLE FOR ANY
+ * DAMAGES SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
+ * THIS SOFTWARE OR ITS DERIVATIVES.
+ */
+
+import javax.naming.*;
+import org.json.*;
+
+//----
+
+final Properties env = new Properties();
+env.put("java.naming.factory.initial", "org.osjava.sj.SimpleContextFactory");
+env.put("org.osjava.sj.delimiter", "/");
+env.put("org.osjava.sj.space", "java:comp/env");
+env.put("org.osjava.sj.root", jndiroot);
+env.put("org.osjava.sj.jndi.shared", "true");
+
+//----
+
+datasources = new ArrayList();
+
+ctx = new InitialContext(env);
+
+try {
+    list = ctx.list("java:comp/env/jdbc");
+
+    while (list.hasMore()) {
+        o = new JSONObject();
+        nc = list.next();
+        print ("NC: " + nc);
+        o.put("java:comp/env/jdbc/" + nc.name, nc.className);
+
+        datasources.add(o);
+    }
+} catch (NamingException x) {
+  //
+  // if no datasources are configured, we have a NamingException... nothing to do
+  //
+}
+
+db = new JSONObject();
+db.put("datasources", new JSONArray(datasources));
