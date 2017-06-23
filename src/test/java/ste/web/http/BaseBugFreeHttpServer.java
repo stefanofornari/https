@@ -16,14 +16,9 @@
 package ste.web.http;
 
 import ste.web.http.handlers.FileHandler;
-import java.io.IOException;
-import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -135,21 +130,4 @@ public abstract class BaseBugFreeHttpServer {
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, String.valueOf(15*60*1000));
     }
-    
-    // ----------------------------------------------------- DefaultTrustManager
-    
-    private static class DefaultTrustManager implements X509TrustManager {
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-    }
-
 }
