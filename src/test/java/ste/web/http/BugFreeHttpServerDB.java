@@ -16,51 +16,69 @@
 package ste.web.http;
 
 import java.io.File;
-import java.net.URL;
-import java.util.Properties;
+import java.util.Map;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
+import javax.sql.DataSource;
+import org.apache.commons.io.FileUtils;
+import static org.assertj.core.api.BDDAssertions.then;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.osjava.sj.DelimiterConvertingContext;
+import org.osjava.sj.SimpleContextFactory;
+import ste.xtest.reflect.PrivateAccess;
 
 /**
- *
+ *  NOTO: this specs use system properties, be careful running specs in parallel
  */
 public class BugFreeHttpServerDB extends BaseBugFreeHttpServer {
+    
+    @Rule
+    public final TemporaryFolder TESTDIR = new TemporaryFolder();
+    
+    @Before
+    public void before_class() throws Exception {
+        FileUtils.copyDirectory(new File("src/test/conf/"), TESTDIR.newFolder("conf"));
+        String home = new File("src/test").getAbsolutePath();
+        System.setProperty("user.home", TESTDIR.getRoot().getAbsolutePath());
+        System.setProperty("user.dir", TESTDIR.getRoot().getAbsolutePath());
+    }
     
     @Test
     public void after_server_creation_initial_context_is_provided()
     throws Exception {
-        /*
         server.start(); waitServerStartup();
         
-        URL url = new URL("https://localhost:" + server.getSSLPort() + "/api/https/conf/get");
-        Object content = url.getContent();
+        File confFile = new File(TESTDIR.getRoot(), "conf/https.properties");
+        FileUtils.copyFile(new File("src/test/conf/https1.properties"), confFile);
         
-        System.out.println(content);
-        */
+        InitialContext ctx = new InitialContext();
+        then(ctx.lookup("java:comp/env/jdbc/ds1")).isNotNull().isInstanceOf(DataSource.class);
+        then(ctx.lookup("java:comp/env/jdbc/ds2")).isNull();
         
-        /*
-        Properties env = createJNDIContext();
+        resetContext(ctx);
+        FileUtils.copyFile(new File("src/test/conf/https2.properties"), confFile);
         
-        DataSource ds1 = (DataSource)new InitialContext(env).lookup("java:comp/env/jdbc/ds1");
-        then(ds1).isNotNull().isInstanceOf(DataSource.class);
-        
-        env.put("org.osjava.sj.root", new File("conf/https2.properties").getAbsolutePath());
-        DataSource ds2 = (DataSource)new InitialContext(env).lookup("java:comp/env/jdbc/ds1");
-        
-        System.out.println(ds1 == ds2);
-        */
+        ctx = new InitialContext();
+        then(ctx.lookup("java:comp/env/jdbc/ds1")).isNull();
+        then(ctx.lookup("java:comp/env/jdbc/ds2")).isNotNull().isInstanceOf(DataSource.class);
+        then(ctx.lookup("java:comp/env/jdbc/ds3")).isNotNull().isInstanceOf(DataSource.class);
     }
     
     // --------------------------------------------------------- private methods
     
-    private Properties createJNDIContext() {
-        final Properties env = new Properties();
-        env.put("java.naming.factory.initial", "org.osjava.sj.SimpleContextFactory");
-        env.put("org.osjava.sj.delimiter", "/");
-        env.put("org.osjava.sj.space", "java:comp/env");
-        env.put("org.osjava.sj.root", new File("conf/https.properties").getAbsolutePath());
-        env.put("org.osjava.sj.jndi.shared", "true");
-        
-        return env;
+    private void resetContext(Context ctx) throws Exception {
+        NamingEnumeration<NameClassPair> bindings = ctx.list("");
+        while (bindings.hasMore()) {
+            ctx.unbind(bindings.next().getName());
+        }
+        Map<String, DelimiterConvertingContext> root =
+            (Map<String, DelimiterConvertingContext>)PrivateAccess.getStaticValue(SimpleContextFactory.class, "contextsByRoot");
+        root.clear();
     }
     
 }
