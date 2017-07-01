@@ -1,3 +1,17 @@
+20170623
+- it is now possible to configure data sources in https.properties which will be 
+  looked up with JNDI. For example:
+
+  jdbc/ds1/type=javax.sql.DataSource
+  jdbc/ds1/driver=org.gjt.mm.mysql.Driver
+  jdbc/ds1/url=jdbc:mysql://localhost/testdb1
+  jdbc/ds1/user=sa
+  jdbc/ds1/password=
+
+  the code will then look it up with:
+  Context c = new InitialContext();
+  c.lookup("java:comp/env/jdbc/ds1");
+
 20170425
 - added a command line tool to initialize a new keystore
 - added bsh command getconf to get the configuration object from HttpServerCLI.getServer()
