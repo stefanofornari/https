@@ -27,4 +27,15 @@
                 <arguments>-DskipTests</arguments>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-release:perform</actionName>
+            <displayName>release:perform</displayName>
+            <goals>
+                <goal>release:perform</goal>
+            </goals>
+            <properties>
+                <arguments>-Dmaven.javadoc.skip=true -DskipTests</arguments>
+                <goals>package</goals>
+            </properties>
+        </action>
     </actions>
