@@ -1,3 +1,7 @@
+20170811
+- included webtoolkit 1.7.2
+- released v1.0.2
+
 20170623
 - it is now possible to configure data sources in https.properties which will be 
   looked up with JNDI. For example:
