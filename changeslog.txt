@@ -1,3 +1,7 @@
+20171105
+- including lib and subdirs in classpath in launcher
+- released v1.0.3
+
 20170811
 - included webtoolkit 1.7.2
 - released v1.0.2
