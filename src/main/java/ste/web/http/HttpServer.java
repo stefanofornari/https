@@ -55,6 +55,7 @@ import javax.net.ssl.X509KeyManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConversionException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
@@ -89,10 +90,12 @@ public class HttpServer {
     UriHttpRequestHandlerMapper webMapper;
 
     /**
-     * Creates a HTTPS server given the a configuration object. The following 
- configuration properties must be set: CONFIG_HTTPS_HOME, CONFIG_HTTPS_PORT,
- CONFIG_SSL_PASSWORD; The following properties are optional: CONFIG_HTTPS_AUTH
- (default to none), CONFIG_HTTPS_WEBROOT (default to webroot);
+     * Creates a HTTPS server given a configuration object. The following 
+     * configuration properties must be set: CONFIG_HTTPS_HOME, CONFIG_HTTPS_PORT,
+     * CONFIG_SSL_PASSWORD.
+     * 
+     * The following properties are optional: CONFIG_HTTPS_AUTH
+     *  (default to none), CONFIG_HTTPS_WEBROOT (default to webroot);
      *
      * @param configuration the configuration object - NOT NULL
      *
@@ -104,45 +107,29 @@ public class HttpServer {
             throw new IllegalArgumentException("configuration can not be null");
         }
         
-        this.configuration = configuration;
- 
-        String home = configuration.getString(CONFIG_HTTPS_ROOT);
-        if (StringUtils.isBlank(home)) {
-            throw new ConfigurationException(
-                "the server home directory is unset or blank; please specify a proper value for the property " + CONFIG_HTTPS_ROOT
-            );
-        }
-        File fileHome = new File(home);
-        if (!fileHome.exists() || !fileHome.isDirectory()) {
-            throw new ConfigurationException (
-                    String.format("the given home [%s] must exist and must be a directory", home)
-            );
-        }
-
-        sslPort = configPort("ssl");
-        webPort = configPort("web");
-        
-        try {
-            String password = configuration.getString(CONFIG_SSL_PASSWORD);
-            sf = getSSLContext(home, password).getServerSocketFactory();
-        } catch (Exception x) {
-            throw new ConfigurationException(x.getMessage(), x);
+        configure(configuration);
+    }
+    
+    /**
+     * Creates a HTTPS server given a configuration file (properties) where to
+     * read the configuration from.
+     * 
+     * @param configurationFilename the configuration file - NOT EMPTY
+     * 
+     * @throws ConfigurationException 
+     */
+    public HttpServer(String configurationFilename) throws ConfigurationException {
+        if (StringUtils.isBlank(configurationFilename)) {
+            throw new IllegalArgumentException("configuration can not be empty");
         }
         
-        String auth = configuration.getString(CONFIG_HTTPS_AUTH);
-        authentication = ClientAuthentication.BASIC;
+        File configurationFile = new File(configurationFilename);
         
-        if ("none".equalsIgnoreCase(auth)) {
-            authentication = ClientAuthentication.NONE;
-        } else if ("cert".equalsIgnoreCase(auth)) {
-            authentication = ClientAuthentication.CERTIFICATE;
+        if (!configurationFile.exists()) {
+            throw new ConfigurationException("configuration file " + configurationFile.getAbsolutePath() + " not found");
         }
         
-        this.running = false;
-        this.listenerThread = null;
-        this.webListenerThread = null;
-        
-        setHandlers(null);
+        configure(new PropertiesConfiguration(configurationFilename));
     }
     
     public void start() {
@@ -303,6 +290,48 @@ public class HttpServer {
     }
     
     // --------------------------------------------------------- private methods
+    
+    private void configure(Configuration c) throws ConfigurationException {
+        this.configuration = c;
+        
+        String home = configuration.getString(CONFIG_HTTPS_ROOT);
+        if (StringUtils.isBlank(home)) {
+            throw new ConfigurationException(
+                "the server home directory is unset or blank; please specify a proper value for the property " + CONFIG_HTTPS_ROOT
+            );
+        }
+        File fileHome = new File(home);
+        if (!fileHome.exists() || !fileHome.isDirectory()) {
+            throw new ConfigurationException (
+                    String.format("the given home [%s] must exist and must be a directory", home)
+            );
+        }
+
+        sslPort = configPort("ssl");
+        webPort = configPort("web");
+        
+        try {
+            String password = configuration.getString(CONFIG_SSL_PASSWORD);
+            sf = getSSLContext(home, password).getServerSocketFactory();
+        } catch (Exception x) {
+            throw new ConfigurationException(x.getMessage(), x);
+        }
+        
+        String auth = configuration.getString(CONFIG_HTTPS_AUTH);
+        authentication = ClientAuthentication.BASIC;
+        
+        if ("none".equalsIgnoreCase(auth)) {
+            authentication = ClientAuthentication.NONE;
+        } else if ("cert".equalsIgnoreCase(auth)) {
+            authentication = ClientAuthentication.CERTIFICATE;
+        }
+        
+        this.running = false;
+        this.listenerThread = null;
+        this.webListenerThread = null;
+        
+        setHandlers(null);
+    }
    
     private SSLContext getSSLContext(final String home, final String password)
             throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, KeyManagementException {

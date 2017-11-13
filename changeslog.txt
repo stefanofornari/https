@@ -1,3 +1,6 @@
+20171113
+- ability to load configuration from a file by HttpServer
+
 20171105
 - including lib and subdirs in classpath in launcher
 - released v1.0.3
