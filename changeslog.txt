@@ -1,5 +1,6 @@
 20171114
-- released v1.1.0
+- releasing the tar.gz as an artifact (so that can be used as dependency)
+- released v1.1.1
 
 20171113
 - ability to load configuration from a file by HttpServer

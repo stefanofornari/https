@@ -14,7 +14,7 @@
             <actionName>CUSTOM-dist</actionName>
             <displayName>dist</displayName>
             <goals>
-                <goal>assembly:assembly</goal>
+                <goal>assembly:single</goal>
             </goals>
         </action>
         <action>
