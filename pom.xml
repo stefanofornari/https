@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ste</groupId>
     <artifactId>https</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
@@ -58,11 +58,6 @@
             <version>3.4</version>
         </dependency>
         <dependency>
-            <groupId>com.github.h-thurow</groupId>
-            <artifactId>simple-jndi</artifactId>
-            <version>0.14.0</version>
-        </dependency>
-        <dependency>
             <groupId>ste.test</groupId>
             <artifactId>xtest</artifactId>
             <version>1.16.4</version>
@@ -77,7 +72,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.7.2</version>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>
@@ -95,11 +90,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.19.1</version>
                 <configuration>
-                    <forkCount>1</forkCount>
-                    <forkMode>always</forkMode>
+                    <parallel>classes</parallel>
                     <reuseForks>false</reuseForks>
+                    <threadCount>1</threadCount>
                     <includes>
-                        <include>**/BugFree*.java</include>
+                        <include>**/BugFreeHttpServerCLI.java</include>
                     </includes>
                 </configuration>
             </plugin>
