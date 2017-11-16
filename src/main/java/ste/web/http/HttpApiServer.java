@@ -29,6 +29,8 @@ import ste.web.http.handlers.RestrictedResourceHandler;
  */
 public class HttpApiServer extends HttpServer {
     
+    public final String BSH_REGEXP = "(.*)\\.bsh";
+    
     public HttpApiServer(Configuration configuration) throws ConfigurationException {
         super(configuration);
         
@@ -38,11 +40,11 @@ public class HttpApiServer extends HttpServer {
         handlers.put(
             "*", 
             new RestrictedResourceHandler(
-                new FileHandler(WEBROOT), null, null
+                new FileHandler(WEBROOT).exclude(BSH_REGEXP), null, null
             )
         );
         handlers.put(
-            "/public/*", new FileHandler(WEBROOT)
+            "/public/*", new FileHandler(WEBROOT).exclude(BSH_REGEXP)
         );
         handlers.put(
             "/api/*", 

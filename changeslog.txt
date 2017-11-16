@@ -1,3 +1,9 @@
+20171116
+- fixed issue #9 beanshell scripts should not be downlaoded if addressed directly
+- fixed issue #8 backend/execution errors should not displayed in the returned page
+- fixed issue #3 full path of the resource visible in return to 404
+- released v1.2.0
+
 20171114
 - releasing the tar.gz as an artifact (so that can be used as dependency)
 - released v1.1.1

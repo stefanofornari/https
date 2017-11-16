@@ -15,8 +15,10 @@
  */
 package ste.web.http;
 
-import org.apache.commons.configuration.Configuration;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.protocol.HttpRequestHandlerMapper;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.After;
@@ -39,6 +41,9 @@ public class BugFreeHttpApiServer extends BaseBugFreeHttpServer {
 
     }
     
+    //
+    // TODO: remove and put waitServerShutdown in base class
+    //
     @After
     public void after() throws Exception {
         if (server != null) {
@@ -79,6 +84,17 @@ public class BugFreeHttpApiServer extends BaseBugFreeHttpServer {
     }
     
     @Test
+    public void beanshell_scripts_shall_not_be_downloaded() throws Exception {
+        final URL script = new URL("https://localhost:8400/https/version/get.bsh");
+        
+        server.start(); waitServerStartup();
+        
+        HttpURLConnection c = (HttpURLConnection)script.openConnection();
+        c.connect();
+        then(c.getResponseCode()).isEqualTo(404);
+    }
+    
+    @Test
     public void get_configuration() throws Exception {
         final PropertiesConfiguration C1 = (PropertiesConfiguration)configuration;
         final PropertiesConfiguration C2 = (PropertiesConfiguration)C1.clone();
@@ -87,6 +103,18 @@ public class BugFreeHttpApiServer extends BaseBugFreeHttpServer {
         
         server = new HttpApiServer(C2);
         then(server.getConfiguration()).isSameAs(C2);
+    }
+    
+    @Test
+    public void beanshell_scripts_errors_shall_not_be_exposed() throws Exception {
+        final URL script = new URL("https://localhost:8400/api/https/error/version");
+        
+        server.start(); waitServerStartup();
+        
+        HttpURLConnection c = (HttpURLConnection)script.openConnection();
+        c.connect();
+        then(c.getResponseCode()).isEqualTo(500);
+        then(IOUtils.toString(c.getErrorStream(), "UTF8")).isEqualTo("server erorr processing the resource - see server log for details");
     }
 
     
