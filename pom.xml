@@ -72,7 +72,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.7.2</version>
+            <version>1.7.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>
@@ -94,7 +94,10 @@
                     <reuseForks>false</reuseForks>
                     <threadCount>1</threadCount>
                     <includes>
-                        <include>**/BugFreeHttpServerCLI.java</include>
+                        <include>**/BG*.java</include>
+                        <include>**/BugFree*.java</include>
+                        <include>**/*BugFree.java</include>
+                        <include>**/*BF.java</include>
                     </includes>
                 </configuration>
             </plugin>
