@@ -18,17 +18,10 @@ package ste.web.http;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HttpRequestHandler;
-import org.apache.http.util.EntityUtils;
 import static org.assertj.core.api.BDDAssertions.then;
-import org.eclipse.jetty.http.HttpHeader;
 import org.junit.Test;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import ste.web.http.handlers.PrintSessionHandler;
@@ -39,7 +32,7 @@ import ste.web.http.handlers.PrintSessionHandler;
  */
 public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
     @Test
-    public void getSessionValuesInTheSameSession() throws Exception {
+    public void get_session_values_in_the_same_session() throws Exception {
         createAndStartServer();
         
         URL url = new URL("https://localhost:" + PORT + "/index.html");
@@ -78,7 +71,7 @@ public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
     }
     
     @Test
-    public void getNewSession() throws Exception {
+    public void get_new_session() throws Exception {
         createAndStartServer();
         
         URL url = new URL("https://localhost:" + PORT + "/index.html");
@@ -119,7 +112,7 @@ public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
     }
 
     @Test
-    public void sessionExpiration() throws Exception {
+    public void session_expiration() throws Exception {
         createAndStartServer();
         
         URL url = new URL("https://localhost:" + PORT + "/index.html");
