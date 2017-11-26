@@ -23,6 +23,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HttpRequestHandler;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_ID_NAME;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import ste.web.http.handlers.PrintSessionHandler;
 
@@ -31,6 +32,7 @@ import ste.web.http.handlers.PrintSessionHandler;
  * @author ste
  */
 public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
+    
     @Test
     public void get_session_values_in_the_same_session() throws Exception {
         createAndStartServer();
@@ -59,7 +61,7 @@ public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
         // a session id, but the counter shall be incremented
         //
         conn = (HttpURLConnection)url.openConnection();
-        conn.setRequestProperty("Cookie", "JSESSIONID=" + sessionId + ";");
+        conn.setRequestProperty("Cookie", SessionHeader.DEFAULT_SESSION_HEADER + "=" + sessionId + ";");
         
         then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
         
@@ -68,6 +70,22 @@ public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
         then(IOUtils.toString(conn.getInputStream(), "UTF8"))
             .contains(String.format("{id: %s}", sessionId))
             .contains("{counter: 2}");
+    }
+    
+    @Test
+    public void set_session_id_name() throws Exception {
+        final String TEST_NAME = "sessionid1";
+        createAndStartServerWithSessionIDName(TEST_NAME);
+        
+        URL url = new URL("https://localhost:" + PORT + "/index.html");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        
+        then(conn.getResponseCode()).isEqualTo(HttpStatus.SC_OK);
+
+        then(
+            HttpUtils.extractSessionId(TEST_NAME, conn.getHeaderField("Set-Cookie"))
+        ).isNotNull();
+        
     }
     
     @Test
@@ -157,6 +175,20 @@ public class BugFreeHttpServerSession extends BaseBugFreeHttpServer {
     protected void createAndStartServer() throws Exception {
         createDefaultConfiguration();
         configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
+        createServer();
+        
+        HashMap<String, HttpRequestHandler> handlers = new HashMap<>();
+        handlers.put("*", new PrintSessionHandler());
+        server.setHandlers(handlers);
+        
+        server.start(); waitServerStartup();
+    }
+    
+    protected void createAndStartServerWithSessionIDName(String name) throws Exception {
+        createDefaultConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "250");
+        configuration.setProperty(CONFIG_HTTPS_SESSION_ID_NAME, name);
+        
         createServer();
         
         HashMap<String, HttpRequestHandler> handlers = new HashMap<>();

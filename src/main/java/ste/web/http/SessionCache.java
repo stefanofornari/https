@@ -37,29 +37,19 @@ class SessionCache extends HashMap<String, HttpSession> {
     
     private final Map<String, Long> lastAccess;
     
+    private final ConfigurationSessionFactory sessionFactory;
     private final long lifetime, purgetime;
     private long lastPurge;
     
     /**
      * Creates the session cache with default session lifetime and purgetime
      */
-    public SessionCache() {
-        this(DEFAULT_SESSION_LIFETIME);
-    }
-    /**
-     * Creates the session cache with the given lifetime.
-     * 
-     * @param lifetime entries lifetime - NOT NULL
-     */
-    public SessionCache(long lifetime) {
-        this(lifetime, DEFAULT_SESSION_PURGETIME);
-    }
-    
-    public SessionCache(long lifetime, long purgetime) {
+    public SessionCache(ConfigurationSessionFactory sessionFactory) {
         super();
         
-        this.lifetime = (lifetime > 0) ? lifetime : 0;
-        this.purgetime = (purgetime > 0) ? purgetime : 0;
+        this.sessionFactory = sessionFactory;
+        this.lifetime = sessionFactory.getLifetime();
+        this.purgetime = DEFAULT_SESSION_PURGETIME;
         this.lastPurge = 0;
         
         this.lastAccess = new HashMap<>();
@@ -100,7 +90,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         purge();
         Long lastTS = lastAccess.get(id);
         if ((lastTS == null) || isExpired(lastTS) || (session == null)) {
-            session = new HttpSession();
+            session = sessionFactory.create();
             super.put(session.getId(), session);
         }
         trackAccess(session.getId());

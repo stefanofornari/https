@@ -16,8 +16,11 @@
 package ste.web.http;
 
 import java.util.concurrent.CountDownLatch;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 
 /**
  *
@@ -27,7 +30,7 @@ public class BugFreeSessionCacheThreading {
     @Test
     public void concurrent_access_to_expired_session_results_in_two_sessions() 
     throws Exception {
-        SessionCache c = new TestSessionCache(25);
+        SessionCache c = new TestSessionCache(getSessionFactory());
         HttpSession s = c.get(null);
         
         ((TestSessionCache)c).LATCH = new CountDownLatch(1);
@@ -51,6 +54,14 @@ public class BugFreeSessionCacheThreading {
         //
         then(t1.session.getId()).isNotEqualTo(t2.session.getId());
         then(t1.session).isNotSameAs(t2.session);
+    }
+    
+    // --------------------------------------------------------- private methods
+    
+    private ConfigurationSessionFactory getSessionFactory() {
+        Configuration c = new PropertiesConfiguration();
+        c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, 25);
+        return new ConfigurationSessionFactory(c);
     }
     
     // -------------------------------------------------------------------------
@@ -77,8 +88,8 @@ public class BugFreeSessionCacheThreading {
     private class TestSessionCache extends SessionCache {
         public CountDownLatch LATCH = null;
         
-        public TestSessionCache(long lifetime) {
-            super(lifetime);
+        public TestSessionCache(ConfigurationSessionFactory c) {
+            super(c);
         }
         
         @Override

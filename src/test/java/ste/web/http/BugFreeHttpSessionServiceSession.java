@@ -22,13 +22,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * TOTO: improve parsing of Cookie value to extract JSESSIONID (e.g. NOJESSIONID="")
+ * TOTO: improve parsing of Cookie value to extract HTTPSID (e.g. NOHTTPSID="")
  * 
  * @author ste
  */
 public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceBase {
     
-    public final String JSESSION_FORMAT = "JSESSIONID=%s; Path=/; Secure";
+    public final String SESSIONID_FORMAT = "HTTPSID=%s; Path=/; Secure; HttpOnly";
     
     HttpSessionContext context = null;
     
@@ -42,13 +42,13 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
     }
     
     @Test
-    public void new_session_if_no_jsession() throws Exception {
+    public void new_session_if_no_session() throws Exception {
         service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
         HttpSession s1 = context.getSession();
         then(s1).isNotNull();
         then(TEST_RESPONSE1.getHeaders("Set-Cookie")).hasSize(1);
         then(TEST_RESPONSE1.getHeaders("Set-Cookie")[0].getValue())
-            .isEqualTo(String.format(JSESSION_FORMAT, s1.getId()));
+            .isEqualTo(String.format(SESSIONID_FORMAT, s1.getId()));
         
         service.doService(TEST_REQUEST1, TEST_RESPONSE1, context);
         HttpSession s2 = context.getSession();
@@ -56,18 +56,18 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         then(s2.getId()).isNotEqualTo(s1.getId());
         then(TEST_RESPONSE1.getHeaders("Set-Cookie")).hasSize(1);
         then(TEST_RESPONSE1.getHeaders("Set-Cookie")[0].getValue())
-            .isEqualTo(String.format(JSESSION_FORMAT, s2.getId()));
+            .isEqualTo(String.format(SESSIONID_FORMAT, s2.getId()));
     }
     
     @Test
-    public void no_jsession_if_jsession_simple() throws Exception {
+    public void no_jsession_if_session_simple() throws Exception {
         BasicHttpResponse res1 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
-            String.format("JSESSIONID=%s", s1.getId())
+            String.format("HTTPSID=%s", s1.getId())
         );
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
@@ -76,14 +76,14 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
     }
     
     @Test
-    public void skip_quotes_in_jsessionid() throws Exception {
+    public void skip_quotes_in_sessionid() throws Exception {
         BasicHttpResponse res1 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
-            String.format("JSESSIONID=\"%s\"", s1.getId())
+            String.format("HTTPSID=\"%s\"", s1.getId())
         );
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
@@ -99,7 +99,7 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         
         TEST_REQUEST1.addHeader(
             "Cookie", 
-            String.format("one=1;JSESSIONID=%s;two=2", s1.getId())
+            String.format("one=1;HTTPSID=%s;two=2", s1.getId())
         );
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
@@ -113,7 +113,7 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         service.doService(TEST_REQUEST1, res1, context);
         HttpSession s1 = context.getSession();
         
-        TEST_REQUEST1.addHeader("Cookie", "one=1;JSESSIONID=123;two=2");
+        TEST_REQUEST1.addHeader("Cookie", "one=1;HTTPSID=123;two=2");
         BasicHttpResponse res2 = HttpUtils.getBasicResponse();
         service.doService(TEST_REQUEST1, res2, context);
         HttpSession s2 = context.getSession();
@@ -121,7 +121,7 @@ public class BugFreeHttpSessionServiceSession extends BugFreeHttpSessionServiceB
         then(s2.getId()).isNotEqualTo(s1.getId());
         then(res2.getHeaders("Set-Cookie")).hasSize(1);
         then(res2.getHeaders("Set-Cookie")[0].getValue())
-            .isEqualTo(String.format(JSESSION_FORMAT, s2.getId()));
+            .isEqualTo(String.format(SESSIONID_FORMAT, s2.getId()));
     }
     
 }

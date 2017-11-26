@@ -17,12 +17,15 @@ package ste.web.http;
 
 import java.lang.reflect.Method;
 import java.time.Clock;
-import java.time.ZoneId;
 import java.util.HashMap;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
+import ste.xtest.reflect.PrivateAccess;
 import ste.xtest.time.FixedClock;
 
 /**
@@ -33,21 +36,21 @@ public class BugFreeSessionCache {
     
     @Test
     public void constructur_set_lifetime() {
-        SessionCache s = new SessionCache();
+        SessionCache s = new SessionCache(getSessionFactory(null));
         then(s.getLifetime()).isEqualTo(SessionCache.DEFAULT_SESSION_LIFETIME);
-        s = new SessionCache(100);
+        s = new SessionCache(getSessionFactory((long)100));
         then(s.getLifetime()).isEqualTo(100);
         
         //
         // 0 or negative lifetime values mean "no expiration"
         //
-        s = new SessionCache(0);
+        s = new SessionCache(getSessionFactory((long)0));
         then(s.getLifetime()).isZero();
         
         final int[] TEST_NEGATIVE_LIFETIME = {-1, -5, -100};
         
         for (int l: TEST_NEGATIVE_LIFETIME) {
-            s = new SessionCache(-1);
+            s = new SessionCache(getSessionFactory((long)-1));
             then(s.getLifetime()).isZero();
         }
     }
@@ -58,7 +61,7 @@ public class BugFreeSessionCache {
         // get(null) creates new items and put them in the cache; we disable 
         // the use of put() and putAll() for now
         //
-        SessionCache c = new SessionCache();
+        SessionCache c = new SessionCache(getSessionFactory(null));
         try {
             HttpSession s = new HttpSession();
             c.put(s.getId(), s);
@@ -80,7 +83,7 @@ public class BugFreeSessionCache {
         final FixedClock CLOCK = new FixedClock();
         final long TEST_LIFETIME = 250;
         
-        SessionCache c = createSession(CLOCK, TEST_LIFETIME);
+        SessionCache c = createSessionCache(CLOCK, TEST_LIFETIME);
         
         HttpSession s = c.get(null);
         
@@ -96,7 +99,7 @@ public class BugFreeSessionCache {
         final FixedClock CLOCK = new FixedClock();
         final long TEST_LIFETIME = 50;
         
-        SessionCache c = createSession(CLOCK, TEST_LIFETIME);
+        SessionCache c = createSessionCache(CLOCK, TEST_LIFETIME);
         
         HttpSession s = c.get(null); s.setAttribute("TEST", "test");
         
@@ -114,8 +117,10 @@ public class BugFreeSessionCache {
     public void purge_expired_sessions() throws Exception {
         final FixedClock CLOCK = new FixedClock();
         
-        SessionCache c = createSession(CLOCK, 75, 200);
+        SessionCache c = createSessionCache(CLOCK, 75);
+        
         HashMap lastAccess = (HashMap)getInstanceValue(c, "lastAccess");
+        PrivateAccess.setInstanceValue(c, "purgetime", 200);
         
         HttpSession s1 = c.get(null); s1.setAttribute("TEST1", "test1"); CLOCK.millis += 25;
         HttpSession s2 = c.get(null); s1.setAttribute("TEST2", "test2"); CLOCK.millis += 25;
@@ -142,7 +147,7 @@ public class BugFreeSessionCache {
     
     @Test
     public void no_expiration() throws Exception {
-        SessionCache c = new SessionCache(0);
+        SessionCache c = new SessionCache(getSessionFactory((long)0));
         HttpSession s = c.get(null);
         
         Method m = SessionCache.class.getDeclaredMethod("expireSession", String.class);
@@ -156,7 +161,7 @@ public class BugFreeSessionCache {
     
     @Test
     public void new_session_when_id_is_null() throws Exception {
-        SessionCache c = new SessionCache(0);
+        SessionCache c = new SessionCache(getSessionFactory((long)0));
         HttpSession s = c.get(null);
         
         then(s).isNotNull();
@@ -166,7 +171,7 @@ public class BugFreeSessionCache {
     @Test
     public void new_session_when_id_is_not_found() throws Exception {
         final String NOT_EXISTING_ID = "notexistingid";
-        SessionCache c = new SessionCache(0);
+        SessionCache c = new SessionCache(getSessionFactory((long)0));
         HttpSession s = c.get(NOT_EXISTING_ID);
         
         then(s).isNotNull();
@@ -177,7 +182,8 @@ public class BugFreeSessionCache {
     public void session_is_not_accessible_any_more_after_expiration() throws Exception {
         final FixedClock CLOCK = new FixedClock();
 
-        SessionCache c = createSession(CLOCK, 50, 50);
+        SessionCache c = createSessionCache(CLOCK, 50);
+        PrivateAccess.setInstanceValue(c, "purgetime", 50);
         HttpSession s = c.get(null);
         
         CLOCK.millis += 75; // the session shall be expired now
@@ -193,18 +199,18 @@ public class BugFreeSessionCache {
     
     // --------------------------------------------------------- private methods
     
-    private SessionCache createSession(Clock clock, long lifetime) throws Exception {
-        SessionCache c = new SessionCache(lifetime);
+    protected ConfigurationSessionFactory getSessionFactory(Long lifetime) {
+        Configuration c = new PropertiesConfiguration();
+        if (lifetime != null) {
+            c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, lifetime);
+        }
+        return new ConfigurationSessionFactory(c);
+    }
+    
+    private SessionCache createSessionCache(Clock clock, long lifetime) throws Exception {
+        SessionCache c = new SessionCache(getSessionFactory((long)lifetime));
         setInstanceValue(c, "clock", clock);
         
         return c;
     }
-    
-    private SessionCache createSession(Clock clock, long lifetime, long purgetime) throws Exception {
-        SessionCache c = new SessionCache(lifetime, purgetime);
-        setInstanceValue(c, "clock", clock);
-        
-        return c;
-    }
-    
 }

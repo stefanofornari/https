@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.logging.Logger;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.HttpConnectionMetrics;
 import org.apache.http.HttpException;
 import org.apache.http.HttpInetConnection;
@@ -38,6 +40,7 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.http.protocol.UriHttpRequestHandlerMapper;
 import org.junit.Before;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import static ste.web.http.HttpServer.LOG_ACCESS;
 
 /**
@@ -71,7 +74,10 @@ public class BugFreeHttpSessionServiceBase {
         UriHttpRequestHandlerMapper handlers = new UriHttpRequestHandlerMapper();
         handlers.register("*", new TestHandler() );
         
-        service = new HttpSessionService(proc, handlers, 15*60*1000);
+        Configuration c = new PropertiesConfiguration();
+        c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
+        
+        service = new HttpSessionService(proc, handlers, new ConfigurationSessionFactory(c));
     }
     
     // ------------------------------------------------------- protected methods

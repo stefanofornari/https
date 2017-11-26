@@ -53,14 +53,14 @@ public class HttpSessionService extends HttpService {
     public HttpSessionService(
         HttpProcessor processor, 
         HttpRequestHandlerMapper handlerMapper,
-        long lifetime
+        ConfigurationSessionFactory sessionFactory
     ) {
         //
         // parameter validation is done in super()
         //
         super(processor, handlerMapper);
         
-        sessions = new SessionCache(lifetime);
+        this.sessions = new SessionCache(sessionFactory);
     }
     
     

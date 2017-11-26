@@ -238,7 +238,7 @@ public class HttpServer {
         final HashMap<String, HttpRequestHandler> handlers,
         HttpProcessor processor
     ) {
-        long sessionLifetime = configuration.getLong(CONFIG_HTTPS_SESSION_LIFETIME, 15*60*1000);
+        ConfigurationSessionFactory sessionFactory = new ConfigurationSessionFactory(configuration);
         
         // Set up the HTTP protocol processor
         if (processor == null) {
@@ -259,12 +259,12 @@ public class HttpServer {
                 }
             }
             
-            ssl = new HttpSessionService(processor, sslMapper, sessionLifetime);
-            web = new HttpSessionService(processor, webMapper, sessionLifetime);
+            ssl = new HttpSessionService(processor, sslMapper, sessionFactory);
+            web = new HttpSessionService(processor, webMapper, sessionFactory);
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            ssl = new HttpSessionService(processor, registry, sessionLifetime);
-            web = new HttpSessionService(processor, registry, sessionLifetime);
+            ssl = new HttpSessionService(processor, registry, sessionFactory);
+            web = new HttpSessionService(processor, registry, sessionFactory);
         }
     }
     

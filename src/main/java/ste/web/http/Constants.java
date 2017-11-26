@@ -26,6 +26,8 @@ public class Constants {
     public static final String CONFIG_HTTPS_WEB_PORT 
                                                     = "ste.https.web.port";
     public static final String CONFIG_HTTPS_AUTH    = "ste.https.auth";
+    public static final String CONFIG_HTTPS_SESSION_ID_NAME
+                                                    = "ste.http.session.name";
     public static final String CONFIG_HTTPS_SESSION_LIFETIME 
                                                     = "ste.http.session.lifetime";
     public static final String CONFIG_HTTPS_WEBROOT 
