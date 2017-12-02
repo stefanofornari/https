@@ -349,8 +349,8 @@ public class HttpServer {
         }
         
         //
-        // try to create a ConfigurationSessionFactory to check configuration
-        // values
+        // try to create a ConfigurationSessionFactory to check session
+        // configuration values
         //
         new ConfigurationSessionFactory(configuration);
         
