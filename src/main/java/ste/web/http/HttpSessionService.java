@@ -108,7 +108,7 @@ public class HttpSessionService extends HttpService {
     
     private String sessionId(HttpRequest request, HttpSessionContext context) {
         for (Header h: request.getHeaders("Cookie")) {
-            String sessionId = HttpUtils.extractSessionId(h.getValue());
+            String sessionId = HttpUtils.extractSessionId(sessions.getSessionIdName(), h.getValue());
             if (sessionId != null) {
                 return sessionId;
             }

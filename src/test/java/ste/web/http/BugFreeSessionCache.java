@@ -24,19 +24,19 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import static ste.xtest.reflect.PrivateAccess.*;
 import org.junit.Test;
+import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_ID_NAME;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import ste.xtest.reflect.PrivateAccess;
 import ste.xtest.time.FixedClock;
 
 /**
  * TODO: see cobertura report
- * TODO: use of Clock
  */
 public class BugFreeSessionCache {
     
     @Test
     public void constructur_set_lifetime() throws Exception {
-        SessionCache s = new SessionCache(getSessionFactory(null));
+        SessionCache s = new SessionCache(getSessionFactory((Long)null));
         then(s.getLifetime()).isEqualTo(SessionCache.DEFAULT_SESSION_LIFETIME);
         s = new SessionCache(getSessionFactory((long)100));
         then(s.getLifetime()).isEqualTo(100);
@@ -61,7 +61,7 @@ public class BugFreeSessionCache {
         // get(null) creates new items and put them in the cache; we disable 
         // the use of put() and putAll() for now
         //
-        SessionCache c = new SessionCache(getSessionFactory(null));
+        SessionCache c = new SessionCache(getSessionFactory((Long)null));
         try {
             HttpSession s = new HttpSession();
             c.put(s.getId(), s);
@@ -197,12 +197,36 @@ public class BugFreeSessionCache {
         }
     }
     
+    @Test
+    public void get_session_id_name() throws Exception {
+        for (String N: new String[] {"pid", "jsession"}) {
+            SessionCache c = new SessionCache(getSessionFactory(N));
+
+            HttpSession s = c.get(null);
+            then(c.getSessionIdName()).isEqualTo(N);
+        }
+        
+        
+    }
+    
     // --------------------------------------------------------- private methods
     
     protected ConfigurationSessionFactory getSessionFactory(Long lifetime) throws Exception {
+        return getSessionFactory(lifetime, null);
+    }
+    
+    protected ConfigurationSessionFactory getSessionFactory(String name) throws Exception {
+        return getSessionFactory(null, name);
+    }
+    
+    protected ConfigurationSessionFactory getSessionFactory(Long lifetime, String name)
+    throws Exception {
         Configuration c = new PropertiesConfiguration();
         if (lifetime != null) {
             c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, lifetime);
+        }
+        if (name != null) {
+            c.addProperty(CONFIG_HTTPS_SESSION_ID_NAME, name);
         }
         return new ConfigurationSessionFactory(c);
     }

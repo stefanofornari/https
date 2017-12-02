@@ -40,6 +40,7 @@ class SessionCache extends HashMap<String, HttpSession> {
     private final ConfigurationSessionFactory sessionFactory;
     private final long lifetime, purgetime;
     private long lastPurge;
+    private String sessionIdName;
     
     /**
      * Creates the session cache with default session lifetime and purgetime
@@ -49,6 +50,7 @@ class SessionCache extends HashMap<String, HttpSession> {
         
         this.sessionFactory = sessionFactory;
         this.lifetime = sessionFactory.getLifetime();
+        this.sessionIdName = sessionFactory.getSessionIdName();
         this.purgetime = DEFAULT_SESSION_PURGETIME;
         this.lastPurge = 0;
         
@@ -57,6 +59,10 @@ class SessionCache extends HashMap<String, HttpSession> {
     
     public long getLifetime() {
         return lifetime;
+    }
+    
+    public String getSessionIdName() {
+        return sessionIdName;
     }
     
     /**
