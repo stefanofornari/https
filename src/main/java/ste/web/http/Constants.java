@@ -20,17 +20,20 @@ package ste.web.http;
  * @author ste
  */
 public class Constants {
-    public static final String CONFIG_SSL_PASSWORD  = "ste.https.ssl.password";
-    public static final String CONFIG_HTTPS_ROOT    = "ste.https.root";
-    public static final String CONFIG_HTTPS_PORT    = "ste.https.port";
+    public static final String CONFIG_SSL_PASSWORD   = "ste.https.ssl.password";
+    public static final String CONFIG_HTTPS_ROOT     = "ste.https.root";
+    public static final String CONFIG_HTTPS_SSL_PORT = "ste.https.ssl.port";
     public static final String CONFIG_HTTPS_WEB_PORT 
-                                                    = "ste.https.web.port";
-    public static final String CONFIG_HTTPS_AUTH    = "ste.https.auth";
+                                                     = "ste.https.web.port";
+    public static final String CONFIG_HTTPS_AUTH     = "ste.https.auth";
     public static final String CONFIG_HTTPS_SESSION_ID_NAME
-                                                    = "ste.http.session.name";
+                                                     = "ste.http.session.name";
     public static final String CONFIG_HTTPS_SESSION_LIFETIME 
-                                                    = "ste.http.session.lifetime";
+                                                     = "ste.http.session.lifetime";
     public static final String CONFIG_HTTPS_WEBROOT 
-                                                    = "ste.https.webroot";
+                                                     = "ste.https.webroot";
+    
+    public static final int DEFAULT_SSL_PORT = 8484;
+    public static final int DEFAULT_WEB_PORT = 8400;
     
 }

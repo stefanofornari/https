@@ -32,13 +32,13 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.BaseBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
+import static ste.web.http.Constants.CONFIG_HTTPS_SSL_PORT;
 
 /**
  *

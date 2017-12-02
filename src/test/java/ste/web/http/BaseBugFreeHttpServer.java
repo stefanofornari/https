@@ -16,10 +16,7 @@
 package ste.web.http;
 
 import ste.web.http.handlers.FileHandler;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import javax.net.ssl.X509TrustManager;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.protocol.HttpRequestHandler;
@@ -31,12 +28,12 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_SESSION_LIFETIME;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
+import static ste.web.http.Constants.CONFIG_HTTPS_SSL_PORT;
 
 /**
  * @author ste
@@ -120,10 +117,10 @@ public abstract class BaseBugFreeHttpServer {
         server.setHandlers(handlers);
     }
     
-    protected void createDefaultConfiguration() {
+        protected void createDefaultConfiguration() {
         configuration = new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, HOME);
-        configuration.setProperty(CONFIG_HTTPS_PORT, PORT);
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, PORT);
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, WEBPORT);
         configuration.setProperty(CONFIG_HTTPS_WEBROOT, DOCROOT);
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");

@@ -40,7 +40,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ClearSystemProperties;
 import org.junit.rules.TemporaryFolder;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
@@ -54,6 +53,7 @@ import sun.security.x509.CertificateX509Key;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
+import static ste.web.http.Constants.CONFIG_HTTPS_SSL_PORT;
 
 /**
  *
@@ -172,7 +172,7 @@ public class BugFreeHttpServerSSL {
         
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8440");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8440");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8880");
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         if (password != null) {

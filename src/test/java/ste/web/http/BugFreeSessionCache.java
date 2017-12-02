@@ -35,7 +35,7 @@ import ste.xtest.time.FixedClock;
 public class BugFreeSessionCache {
     
     @Test
-    public void constructur_set_lifetime() {
+    public void constructur_set_lifetime() throws Exception {
         SessionCache s = new SessionCache(getSessionFactory(null));
         then(s.getLifetime()).isEqualTo(SessionCache.DEFAULT_SESSION_LIFETIME);
         s = new SessionCache(getSessionFactory((long)100));
@@ -199,7 +199,7 @@ public class BugFreeSessionCache {
     
     // --------------------------------------------------------- private methods
     
-    protected ConfigurationSessionFactory getSessionFactory(Long lifetime) {
+    protected ConfigurationSessionFactory getSessionFactory(Long lifetime) throws Exception {
         Configuration c = new PropertiesConfiguration();
         if (lifetime != null) {
             c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, lifetime);

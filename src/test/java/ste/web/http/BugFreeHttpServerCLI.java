@@ -22,11 +22,11 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.BDDAssertions.then;
 import org.junit.Test;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEBROOT;
-import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
+import static ste.web.http.Constants.DEFAULT_SSL_PORT;
+import static ste.web.http.Constants.DEFAULT_WEB_PORT;
 
 /**
  *
@@ -44,8 +44,8 @@ public class BugFreeHttpServerCLI extends BaseBugFreeHttpServerCLI {
         Configuration c = server.getConfiguration();
         then(c.getString(CONFIG_HTTPS_ROOT)).isEqualTo(ROOT + "/.");
         then(c.getString(CONFIG_HTTPS_WEBROOT)).isEqualTo(new File(ROOT, "docroot").getAbsolutePath());
-        then(c.getInt(CONFIG_HTTPS_PORT)).isEqualTo(8484);
-        then(c.getInt(CONFIG_HTTPS_WEB_PORT)).isEqualTo(8400);
+        then(server.getSSLPort()).isEqualTo(DEFAULT_SSL_PORT);
+        then(server.getWebPort()).isEqualTo(DEFAULT_WEB_PORT);
     }
     
     @Test

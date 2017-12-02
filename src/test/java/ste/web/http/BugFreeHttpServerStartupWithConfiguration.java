@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import static ste.web.http.ConfigurationSessionFactory.REGEX_VALID_NAME;
 import static ste.web.http.Constants.*;
 import ste.web.http.HttpServer.ClientAuthentication;
 import static ste.xtest.Constants.*;
@@ -63,7 +64,7 @@ public class BugFreeHttpServerStartupWithConfiguration extends BaseBugFreeHttpSe
     @Test
     public void create_server_with_configuration_object_KO_root() throws Exception {  
         Configuration configuration = new PropertiesConfiguration();
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8080");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8080");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
        
         try {
@@ -95,56 +96,61 @@ public class BugFreeHttpServerStartupWithConfiguration extends BaseBugFreeHttpSe
         Configuration configuration = new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        
-        try {
-            new HttpServer(configuration);
-            fail("missing check for invalid configuration");
-        }  catch (ConfigurationException x) {
-            then(x.getMessage()).contains(CONFIG_HTTPS_PORT).contains("unset");
-        }
+
         for (String BLANK: BLANKS_WITHOUT_NULL) {
-            configuration.setProperty(CONFIG_HTTPS_PORT, BLANK);
+            configuration.setProperty(CONFIG_HTTPS_SSL_PORT, BLANK);
             try {
                 new HttpServer(configuration);
                 fail("missing check for invalid configuration");
             } catch (ConfigurationException x) {
-                then(x.getMessage()).contains(CONFIG_HTTPS_PORT).contains("invalid");
+                then(x.getMessage()).contains(CONFIG_HTTPS_SSL_PORT).contains("invalid");
             }
         }
         
-        configuration.setProperty(CONFIG_HTTPS_PORT, "notanumber");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "notanumber");
         try {
             new HttpServer(configuration);
             fail("missing check for invalid configuration");
         } catch (ConfigurationException x) {
-            then(x.getMessage()).contains(CONFIG_HTTPS_PORT).contains("invalid");
-        }
-        
-        configuration.setProperty(CONFIG_HTTPS_PORT, "-1");
-        try {
-            new HttpServer(configuration);
-            fail("missing check for invalid configuration");
-        } catch (ConfigurationException x) {
-            then(x.getMessage()).contains(String.valueOf(configuration.getProperty(CONFIG_HTTPS_PORT)));
+            then(x.getMessage()).contains(CONFIG_HTTPS_SSL_PORT).contains("invalid");
         }
         
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8080");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8080");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
         then(new HttpServer(configuration).getSSLPort()).isEqualTo(8080);
         then(new HttpServer(configuration).getWebPort()).isEqualTo(8888);
         
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8181");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8181");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8787");
         then(new HttpServer(configuration).getSSLPort()).isEqualTo(8181);
         then(new HttpServer(configuration).getWebPort()).isEqualTo(8787);
     }
     
     @Test
+    public void create_server_with_configuration_object_port_diable_listerners() throws Exception {  
+        Configuration configuration = new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "-1");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
+        
+        then(new HttpServer(configuration).getSSLService()).isNull();
+        then(new HttpServer(configuration).getWebService()).isNotNull();
+        
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8888");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "0");
+        
+        then(new HttpServer(configuration).getSSLService()).isNotNull();
+        then(new HttpServer(configuration).getWebService()).isNull();
+    }
+    
+    @Test
     public void create_server_with_configuration_objec_client_authentication() throws Exception {  
         Configuration configuration = new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
-        configuration.setProperty(CONFIG_HTTPS_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8000");
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
         
@@ -166,6 +172,56 @@ public class BugFreeHttpServerStartupWithConfiguration extends BaseBugFreeHttpSe
         
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         then(new HttpServer(configuration).getAuthentication()).isEqualTo(ClientAuthentication.NONE);
+    }
+    
+    @Test
+    public void create_server_with_configuration_object_session_lifetime() throws Exception {  
+        Configuration configuration = new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        
+        //
+        // wrong session lifetime
+        //
+        configuration.setProperty(CONFIG_HTTPS_SESSION_LIFETIME, "nan");
+        try {
+            new HttpServer(configuration);
+            fail("missing check for values validity");
+        } catch (ConfigurationException x) {
+            then(x).hasMessageContaining(CONFIG_HTTPS_SESSION_LIFETIME + " must be a number");
+        }
+    }
+    
+    @Test
+    public void create_server_with_configuration_object_session_id_name() throws Exception {  
+        Configuration configuration = new PropertiesConfiguration();
+        configuration.setProperty(CONFIG_HTTPS_ROOT, "src/test");
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, "8000");
+        configuration.setProperty(CONFIG_HTTPS_WEB_PORT, "8888");
+        configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
+        
+        //
+        // wrong session name
+        //
+        for (String N: new String[] {"", "with_è", "with space", "with=char", "with;char", "with'char", "with\"char"}) {
+            configuration.setProperty(CONFIG_HTTPS_SESSION_ID_NAME, N);
+            try {
+                new HttpServer(configuration);
+                fail("missing check for values validity (" + N + ")");
+            } catch (ConfigurationException x) {
+                then(x).hasMessageContaining(CONFIG_HTTPS_SESSION_ID_NAME + " '" + N + "' must be a valid identifier (" + REGEX_VALID_NAME + ")");
+            }
+        }
+        
+        //
+        // valid session name
+        //
+        for (String N: new String[] {"id", "ID", "iD", "i", "a_b", "jsessionid", "jSeSiOn"}) {
+            configuration.setProperty(CONFIG_HTTPS_SESSION_ID_NAME, N);
+            new HttpServer(configuration);
+        }
     }
     
     @Test
@@ -201,7 +257,7 @@ public class BugFreeHttpServerStartupWithConfiguration extends BaseBugFreeHttpSe
         
         HttpServer server = new HttpServer(conf1.getAbsolutePath());
         
-        then(server.getSSLPort()).isEqualTo(configuration.getInt(CONFIG_HTTPS_PORT));
+        then(server.getSSLPort()).isEqualTo(configuration.getInt(CONFIG_HTTPS_SSL_PORT));
     }
     
     // --------------------------------------------------------- private methods

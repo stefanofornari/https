@@ -37,8 +37,10 @@ public class HttpServerCLI {
         
         configuration.addProperty(CONFIG_HTTPS_ROOT, new File(".").getAbsolutePath());
         configuration.addProperty(CONFIG_HTTPS_WEBROOT, new File("docroot").getAbsolutePath());
-        configuration.addProperty(CONFIG_HTTPS_PORT, "8484");
+        /*
+        configuration.addProperty(CONFIG_HTTPS_SSL_PORT, "8484");
         configuration.addProperty(CONFIG_HTTPS_WEB_PORT, "8400");
+        */
         
         configuration.load(new File("conf/https.properties"));
         

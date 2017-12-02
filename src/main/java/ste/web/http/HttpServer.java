@@ -31,7 +31,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.KeyManager;
@@ -135,49 +134,49 @@ public class HttpServer {
     public void start() {
         SSLServerSocket sslSocket = null;
         ServerSocket webSocket = null;
-        try {
-            sslSocket = (SSLServerSocket) sf.createServerSocket(sslPort);
-        } catch (IOException x) {
-            if (LOG.isLoggable(Level.INFO)) {
-                LOG.info(String.format("unable to start the server because it was not possible to bind port %d (%s)",
-                        sslPort,
-                        x.getMessage().toLowerCase()
-                    )
-                );
-            }
-            
-            return;
-        }
-        sslSocket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
         
-        try {
-            webSocket = new ServerSocket(webPort);
-        } catch (IOException x) {
-            if (LOG.isLoggable(Level.INFO)) {
-                LOG.info(
-                    String.format(
-                        "unable to start the server because it was not possible to bind port %d (%s)",
-                        webPort,
-                        x.getMessage().toLowerCase()
-                    )
-                );
-            }
-            
-            return;
-        }
         running = true;
-             
-        listenerThread = new RequestListenerThread(this, sslSocket);
-        listenerThread.setDaemon(true);
-        listenerThread.start();
         
-        webListenerThread = new RequestListenerThread(this, webSocket);
-        webListenerThread.setDaemon(true);
-        webListenerThread.start();      
+        if (sslPort > 0) {
+            try {
+                sslSocket = (SSLServerSocket) sf.createServerSocket(sslPort);
+                sslSocket.setNeedClientAuth(authentication == ClientAuthentication.CERTIFICATE);
+                listenerThread = new RequestListenerThread(this, sslSocket);
+                listenerThread.setDaemon(true);
+                listenerThread.start();
+            } catch (IOException x) {
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info(String.format("unable to start the server because it was not possible to bind port %d (%s)",
+                            sslPort,
+                            x.getMessage().toLowerCase()
+                        )
+                    );
+                }
+            }
+            
+        }
+        
+        if (webPort > 0) {
+            try {
+                webSocket = new ServerSocket(webPort);         
+                webListenerThread = new RequestListenerThread(this, webSocket);
+                webListenerThread.setDaemon(true);
+                webListenerThread.start(); 
+            } catch (IOException x) {
+                if (LOG.isLoggable(Level.INFO)) {
+                    LOG.info(
+                        String.format(
+                            "unable to start the server because it was not possible to bind port %d (%s)",
+                            webPort,
+                            x.getMessage().toLowerCase()
+                        )
+                    );
+                }
+            }
+        } 
     }
 
     public void stop() {
-        running = false;
         if (listenerThread != null) {
             listenerThread.interrupt();
             try {
@@ -194,6 +193,7 @@ public class HttpServer {
                 throw new RuntimeException(x);
             }
         }
+        running = false;
     }
 
     public boolean isRunning() {
@@ -238,7 +238,17 @@ public class HttpServer {
         final HashMap<String, HttpRequestHandler> handlers,
         HttpProcessor processor
     ) {
-        ConfigurationSessionFactory sessionFactory = new ConfigurationSessionFactory(configuration);
+        //
+        // At this point configuration should be correct, therefore we can keep
+        // an empty catch
+        //
+        ConfigurationSessionFactory sessionFactory = null;
+        
+        try {
+            sessionFactory = new ConfigurationSessionFactory(configuration);
+        } catch (ConfigurationException x) {
+            
+        }
         
         // Set up the HTTP protocol processor
         if (processor == null) {
@@ -259,12 +269,24 @@ public class HttpServer {
                 }
             }
             
-            ssl = new HttpSessionService(processor, sslMapper, sessionFactory);
-            web = new HttpSessionService(processor, webMapper, sessionFactory);
+            ssl = (sslPort > 0) 
+                ? new HttpSessionService(processor, sslMapper, sessionFactory)
+                : null
+                ;
+            web = (webPort > 0)
+                ? new HttpSessionService(processor, webMapper, sessionFactory)
+                : null
+                ;
         } else {
             UriHttpRequestHandlerMapper registry = new UriHttpRequestHandlerMapper();
-            ssl = new HttpSessionService(processor, registry, sessionFactory);
-            web = new HttpSessionService(processor, registry, sessionFactory);
+            ssl = (sslPort > 0) 
+                ? new HttpSessionService(processor, registry, sessionFactory)
+                : null
+                ;
+            web = (webPort > 0) 
+                ? new HttpSessionService(processor, registry, sessionFactory)
+                : null
+                ;
         }
     }
     
@@ -325,6 +347,12 @@ public class HttpServer {
         } else if ("cert".equalsIgnoreCase(auth)) {
             authentication = ClientAuthentication.CERTIFICATE;
         }
+        
+        //
+        // try to create a ConfigurationSessionFactory to check configuration
+        // values
+        //
+        new ConfigurationSessionFactory(configuration);
         
         this.running = false;
         this.listenerThread = null;
@@ -391,30 +419,21 @@ public class HttpServer {
     private int configPort(final String whichPort) throws ConfigurationException {
         final String KEY = "web".equals(whichPort) 
                          ? CONFIG_HTTPS_WEB_PORT
-                         : CONFIG_HTTPS_PORT
+                         : CONFIG_HTTPS_SSL_PORT
                          ;
+        final int DEFAULT = "web".equals(whichPort) 
+                          ? DEFAULT_WEB_PORT
+                          : DEFAULT_SSL_PORT
+                          ;
+        
         int p = 0;
         try {
-            p = configuration.getInt(KEY);
-        } catch (NoSuchElementException x) {
-            throw new ConfigurationException(
-                "the " + whichPort + " port is unset; please specify a proper value for the property " + KEY
-            );
+            p = configuration.getInt(KEY, DEFAULT);
         } catch (ConversionException x) {
             throw new ConfigurationException(
                 "the " + whichPort + " port <" + 
                 configuration.getProperty(KEY) + 
                 "> is invalid; please specify a proper value for the property " + 
-                KEY
-            );
-        }
-        if (p <= 0) {
-            throw new ConfigurationException(
-                "the " + whichPort + " port <" +
-                configuration.getProperty(KEY) + 
-                "> is invalid; please specify a value between 1 and " 
-                + Integer.MAX_VALUE + 
-                " for the property " +
                 KEY
             );
         }

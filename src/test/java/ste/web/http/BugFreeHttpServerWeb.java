@@ -59,15 +59,6 @@ public class BugFreeHttpServerWeb extends BaseBugFreeHttpServer {
                    .hasMessageContaining(CONFIG_HTTPS_WEB_PORT);
         }
         
-        configuration.setProperty(Constants.CONFIG_HTTPS_WEB_PORT, "-1");
-        try {
-            createServer();
-            fail("missing invalid port check");
-        } catch (ConfigurationException x) {
-            then(x).hasMessageStartingWith("the web port <-1> is invalid")
-                   .hasMessageContaining(CONFIG_HTTPS_WEB_PORT);
-        }
-        
         configuration.setProperty(Constants.CONFIG_HTTPS_WEB_PORT, "");
         try {
             createServer();
@@ -76,20 +67,6 @@ public class BugFreeHttpServerWeb extends BaseBugFreeHttpServer {
             then(x).hasMessageContaining("the web port <> is invalid")
                    .hasMessageContaining(CONFIG_HTTPS_WEB_PORT);
         }
-        
-        configuration.setProperty(Constants.CONFIG_HTTPS_WEB_PORT, null);
-        try {
-            createServer();
-            fail("missing invalid port check");
-        } catch (ConfigurationException x) {
-            then(x).hasMessageStartingWith("the web port is unset;")
-                   .hasMessageContaining(CONFIG_HTTPS_WEB_PORT);
-        }
-    }
-    
-    @Test
-    public void web_server_has_its_own_handlers() {
-        
     }
 
     // --------------------------------------------------------- private methods

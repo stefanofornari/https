@@ -58,7 +58,7 @@ public class BugFreeSessionCacheThreading {
     
     // --------------------------------------------------------- private methods
     
-    private ConfigurationSessionFactory getSessionFactory() {
+    private ConfigurationSessionFactory getSessionFactory() throws Exception {
         Configuration c = new PropertiesConfiguration();
         c.addProperty(CONFIG_HTTPS_SESSION_LIFETIME, 25);
         return new ConfigurationSessionFactory(c);

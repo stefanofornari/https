@@ -30,13 +30,13 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ProvideSystemProperty;
 import static ste.web.http.BaseBugFreeHttpServer.SSL_PASSWORD;
 import static ste.web.http.Constants.CONFIG_HTTPS_AUTH;
-import static ste.web.http.Constants.CONFIG_HTTPS_PORT;
 import static ste.web.http.Constants.CONFIG_HTTPS_ROOT;
 import static ste.web.http.Constants.CONFIG_HTTPS_WEB_PORT;
 import static ste.web.http.Constants.CONFIG_SSL_PASSWORD;
 import ste.web.http.handlers.FileHandler;
 import ste.xtest.junit.BugFree;
 import ste.xtest.logging.ListLogHandler;
+import static ste.web.http.Constants.CONFIG_HTTPS_SSL_PORT;
 
 /**
  *
@@ -133,7 +133,7 @@ public class BugFreeHttpServerStartupLog extends BugFree {
         
         PropertiesConfiguration configuration= new PropertiesConfiguration();
         configuration.setProperty(CONFIG_HTTPS_ROOT, root.getAbsolutePath());
-        configuration.setProperty(CONFIG_HTTPS_PORT, String.valueOf(sslPort));
+        configuration.setProperty(CONFIG_HTTPS_SSL_PORT, String.valueOf(sslPort));
         configuration.setProperty(CONFIG_HTTPS_WEB_PORT, String.valueOf(webPort));
         configuration.setProperty(CONFIG_HTTPS_AUTH, "none");
         configuration.setProperty(CONFIG_SSL_PASSWORD, SSL_PASSWORD);
