@@ -1,3 +1,7 @@
+20180427
+- upgraded to Http Core 4.4.9
+- released v1.3.2
+
 20171202
 - fixed issue #7 make configurable the listeners to start 
 - fixed issue #5 ability to rename the session id cookie 
