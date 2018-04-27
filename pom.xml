@@ -7,8 +7,8 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
-            <groupId>ste</groupId>
-            <artifactId>httpcorefix</artifactId>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
             <version>4.4.9</version>
             <type>jar</type>
         </dependency>
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>ste.web</groupId>
             <artifactId>webtoolkitlib</artifactId>
-            <version>1.9.0</version>
+            <version>1.9.1</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>
