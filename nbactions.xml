@@ -34,7 +34,19 @@
                 <goal>release:perform</goal>
             </goals>
             <properties>
-                <arguments>-Dmaven.javadoc.skip=true -DskipTests</arguments>
+                <arguments>-DskipTests</arguments>
+                <goals>package</goals>
+            </properties>
+        </action>
+        <action>
+            <actionName>CUSTOM-release:perform</actionName>
+            <displayName>Deploy on central</displayName>
+            <goals>
+                <goal>release:perform</goal>
+                <goal>deploy</goal>
+            </goals>
+            <properties>
+                <arguments>-DskipTests</arguments>
                 <goals>package</goals>
             </properties>
         </action>
